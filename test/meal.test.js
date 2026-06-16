@@ -1,11 +1,11 @@
 process.env.JWT_SECRET = 'test-only-jwt-secret';
 
+const { expect } = require('chai');
 const jwt = require('jsonwebtoken');
 const request = require('supertest');
 const app = require('../src/app');
 const mealService = require('../src/services/meal.service');
-
-jest.mock('../src/services/meal.service');
+const { stubService } = require('./helpers/stubs');
 
 const cook = {
   id: 42,
@@ -73,222 +73,227 @@ function validUpdate(overrides = {}) {
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  stubService(mealService, [
+    'findAllMeals',
+    'findMealById',
+    'createMeal',
+    'updateMeal',
+    'deleteMeal',
+  ]);
 });
 
 describe('POST /api/meal', () => {
-  test('create meal missing required field returns 400', async () => {
+  it('create meal missing required field returns 400', async () => {
     const response = await request(app)
       .post('/api/meal')
       .set('Authorization', `Bearer ${tokenFor()}`)
       .send(validMeal({ name: '' }));
 
-    expect(response.status).toBe(400);
-    expect(response.body).toEqual({
+    expect(response.status).to.equal(400);
+    expect(response.body).to.deep.equal({
       status: 400,
       message: 'name is required',
       data: null,
     });
-    expect(mealService.createMeal).not.toHaveBeenCalled();
+    expect(mealService.createMeal.calls).to.have.lengthOf(0);
   });
 
-  test('create meal without token returns 401', async () => {
+  it('create meal without token returns 401', async () => {
     const response = await request(app).post('/api/meal').send(validMeal());
 
-    expect(response.status).toBe(401);
-    expect(response.body).toEqual({
+    expect(response.status).to.equal(401);
+    expect(response.body).to.deep.equal({
       status: 401,
       message: 'Authentication token is required',
       data: null,
     });
   });
 
-  test('create meal success returns 201', async () => {
-    mealService.createMeal.mockResolvedValue(meal);
+  it('create meal success returns 201', async () => {
+    mealService.createMeal.resolves(meal);
 
     const response = await request(app)
       .post('/api/meal')
       .set('Authorization', `Bearer ${tokenFor()}`)
       .send(validMeal());
 
-    expect(response.status).toBe(201);
-    expect(mealService.createMeal).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'Pasta pesto',
-    }), 42);
-    expect(response.body.status).toBe(201);
-    expect(response.body.message).toBe('Meal created successfully');
-    expect(response.body.data.meal.cook.password).toBeUndefined();
-    expect(response.body.data.meal.participants[0].password).toBeUndefined();
+    expect(response.status).to.equal(201);
+    expect(mealService.createMeal.calls[0][0]).to.include({ name: 'Pasta pesto' });
+    expect(mealService.createMeal.calls[0][1]).to.equal(42);
+    expect(response.body.status).to.equal(201);
+    expect(response.body.message).to.equal('Meal created successfully');
+    expect(response.body.data.meal.cook.password).to.be.undefined;
+    expect(response.body.data.meal.participants[0].password).to.be.undefined;
   });
 });
 
 describe('PUT /api/meal/:mealId', () => {
-  test('update meal missing required fields returns 400', async () => {
+  it('update meal missing required fields returns 400', async () => {
     const response = await request(app)
       .put('/api/meal/7')
       .set('Authorization', `Bearer ${tokenFor()}`)
       .send(validUpdate({ price: undefined }));
 
-    expect(response.status).toBe(400);
-    expect(response.body).toEqual({
+    expect(response.status).to.equal(400);
+    expect(response.body).to.deep.equal({
       status: 400,
       message: 'price is required',
       data: null,
     });
   });
 
-  test('update meal without token returns 401', async () => {
+  it('update meal without token returns 401', async () => {
     const response = await request(app).put('/api/meal/7').send(validUpdate());
 
-    expect(response.status).toBe(401);
-    expect(response.body.data).toBeNull();
+    expect(response.status).to.equal(401);
+    expect(response.body.data).to.equal(null);
   });
 
-  test('update meal by non-owner returns 403', async () => {
-    mealService.findMealById.mockResolvedValue({ ...meal, cookId: 42 });
+  it('update meal by non-owner returns 403', async () => {
+    mealService.findMealById.resolves({ ...meal, cookId: 42 });
 
     const response = await request(app)
       .put('/api/meal/7')
       .set('Authorization', `Bearer ${tokenFor({ id: 99, emailAddress: 'other@example.com' })}`)
       .send(validUpdate());
 
-    expect(response.status).toBe(403);
-    expect(response.body).toEqual({
+    expect(response.status).to.equal(403);
+    expect(response.body).to.deep.equal({
       status: 403,
       message: 'You can only update or delete your own meal',
       data: null,
     });
-    expect(mealService.updateMeal).not.toHaveBeenCalled();
+    expect(mealService.updateMeal.calls).to.have.lengthOf(0);
   });
 
-  test('update non-existing meal returns 404', async () => {
-    mealService.findMealById.mockResolvedValue(null);
+  it('update non-existing meal returns 404', async () => {
+    mealService.findMealById.resolves(null);
 
     const response = await request(app)
       .put('/api/meal/999')
       .set('Authorization', `Bearer ${tokenFor()}`)
       .send(validUpdate());
 
-    expect(response.status).toBe(404);
-    expect(response.body).toEqual({
+    expect(response.status).to.equal(404);
+    expect(response.body).to.deep.equal({
       status: 404,
       message: 'Meal not found',
       data: null,
     });
   });
 
-  test('update meal success returns 200', async () => {
+  it('update meal success returns 200', async () => {
     const updatedMeal = { ...meal, name: 'Pasta pesto updated' };
-    mealService.findMealById.mockResolvedValueOnce(meal);
-    mealService.updateMeal.mockResolvedValue(updatedMeal);
+    mealService.findMealById.resolvesOnce(meal);
+    mealService.updateMeal.resolves(updatedMeal);
 
     const response = await request(app)
       .put('/api/meal/7')
       .set('Authorization', `Bearer ${tokenFor()}`)
       .send(validUpdate());
 
-    expect(response.status).toBe(200);
-    expect(mealService.updateMeal).toHaveBeenCalledWith(7, validUpdate());
-    expect(response.body).toMatchObject({
+    expect(response.status).to.equal(200);
+    expect(mealService.updateMeal.calls).to.deep.equal([[7, validUpdate()]]);
+    expect(response.body).to.deep.include({
       status: 200,
       message: 'Meal updated successfully',
     });
-    expect(response.body.data.meal.name).toBe('Pasta pesto updated');
+    expect(response.body.data.meal.name).to.equal('Pasta pesto updated');
   });
 });
 
 describe('GET /api/meal', () => {
-  test('get all meals returns 200', async () => {
-    mealService.findAllMeals.mockResolvedValue([meal]);
+  it('get all meals returns 200', async () => {
+    mealService.findAllMeals.resolves([meal]);
 
     const response = await request(app).get('/api/meal');
 
-    expect(response.status).toBe(200);
-    expect(response.body.status).toBe(200);
-    expect(response.body.message).toBe('Meals retrieved successfully');
-    expect(response.body.data.meals).toHaveLength(1);
-    expect(response.body.data.meals[0].cook.password).toBeUndefined();
+    expect(response.status).to.equal(200);
+    expect(response.body.status).to.equal(200);
+    expect(response.body.message).to.equal('Meals retrieved successfully');
+    expect(response.body.data.meals).to.have.lengthOf(1);
+    expect(response.body.data.meals[0].cook.password).to.be.undefined;
   });
 });
 
 describe('GET /api/meal/:mealId', () => {
-  test('get meal by non-existing id returns 404', async () => {
-    mealService.findMealById.mockResolvedValue(null);
+  it('get meal by non-existing id returns 404', async () => {
+    mealService.findMealById.resolves(null);
 
     const response = await request(app).get('/api/meal/999');
 
-    expect(response.status).toBe(404);
-    expect(response.body).toEqual({
+    expect(response.status).to.equal(404);
+    expect(response.body).to.deep.equal({
       status: 404,
       message: 'Meal not found',
       data: null,
     });
   });
 
-  test('get meal by id success returns 200', async () => {
-    mealService.findMealById.mockResolvedValue(meal);
+  it('get meal by id success returns 200', async () => {
+    mealService.findMealById.resolves(meal);
 
     const response = await request(app).get('/api/meal/7');
 
-    expect(response.status).toBe(200);
-    expect(response.body).toMatchObject({
+    expect(response.status).to.equal(200);
+    expect(response.body).to.deep.include({
       status: 200,
       message: 'Meal retrieved successfully',
     });
-    expect(response.body.data.meal.id).toBe(7);
-    expect(response.body.data.meal.participants[0].password).toBeUndefined();
+    expect(response.body.data.meal.id).to.equal(7);
+    expect(response.body.data.meal.participants[0].password).to.be.undefined;
   });
 });
 
 describe('DELETE /api/meal/:mealId', () => {
-  test('delete meal without token returns 401', async () => {
+  it('delete meal without token returns 401', async () => {
     const response = await request(app).delete('/api/meal/7');
 
-    expect(response.status).toBe(401);
-    expect(response.body.data).toBeNull();
+    expect(response.status).to.equal(401);
+    expect(response.body.data).to.equal(null);
   });
 
-  test('delete meal by non-owner returns 403', async () => {
-    mealService.findMealById.mockResolvedValue({ ...meal, cookId: 42 });
+  it('delete meal by non-owner returns 403', async () => {
+    mealService.findMealById.resolves({ ...meal, cookId: 42 });
 
     const response = await request(app)
       .delete('/api/meal/7')
       .set('Authorization', `Bearer ${tokenFor({ id: 99, emailAddress: 'other@example.com' })}`);
 
-    expect(response.status).toBe(403);
-    expect(response.body.message).toBe('You can only update or delete your own meal');
-    expect(mealService.deleteMeal).not.toHaveBeenCalled();
+    expect(response.status).to.equal(403);
+    expect(response.body.message).to.equal('You can only update or delete your own meal');
+    expect(mealService.deleteMeal.calls).to.have.lengthOf(0);
   });
 
-  test('delete non-existing meal returns 404', async () => {
-    mealService.findMealById.mockResolvedValue(null);
+  it('delete non-existing meal returns 404', async () => {
+    mealService.findMealById.resolves(null);
 
     const response = await request(app)
       .delete('/api/meal/999')
       .set('Authorization', `Bearer ${tokenFor()}`);
 
-    expect(response.status).toBe(404);
-    expect(response.body).toEqual({
+    expect(response.status).to.equal(404);
+    expect(response.body).to.deep.equal({
       status: 404,
       message: 'Meal not found',
       data: null,
     });
   });
 
-  test('delete meal success returns 200', async () => {
-    mealService.findMealById.mockResolvedValue(meal);
-    mealService.deleteMeal.mockResolvedValue(true);
+  it('delete meal success returns 200', async () => {
+    mealService.findMealById.resolves(meal);
+    mealService.deleteMeal.resolves(true);
 
     const response = await request(app)
       .delete('/api/meal/7')
       .set('Authorization', `Bearer ${tokenFor()}`);
 
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual({
+    expect(response.status).to.equal(200);
+    expect(response.body).to.deep.equal({
       status: 200,
       message: 'Meal deleted successfully',
       data: null,
     });
-    expect(mealService.deleteMeal).toHaveBeenCalledWith(7);
+    expect(mealService.deleteMeal.calls).to.deep.equal([[7]]);
   });
 });

@@ -9,7 +9,7 @@ Backend REST API for the HBO Programmeren 4 Share-a-Meal assignment.
 - MySQL with `mysql2`
 - JWT authentication with `jsonwebtoken`
 - Password hashing with `bcrypt`
-- Jest and Supertest for automated tests
+- Mocha, Chai and Supertest for automated tests
 - Configuration through environment variables
 
 ## Project Structure
@@ -116,7 +116,7 @@ GET /api/info
 npm test
 ```
 
-The test suite uses Jest and Supertest. Database-dependent services are mocked in API tests so the suite can run without a local MySQL server.
+The test suite uses Mocha, Chai and Supertest. Database-dependent services are stubbed in API tests so the suite can run without a local MySQL server.
 
 ## API Response Format
 
