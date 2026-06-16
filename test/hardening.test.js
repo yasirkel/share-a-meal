@@ -52,14 +52,16 @@ describe('final hardening assets', () => {
     expect(packageJson).not.to.match(previousTestFramework);
   });
 
-  test('production environment example is available without real secrets', () => {
+  it('production environment example is available without real secrets', () => {
     const envExample = fs.readFileSync(
       path.join(__dirname, '..', '.env.production.example'),
       'utf8'
     );
 
-    expect(envExample).toContain('NODE_ENV=production');
-    expect(envExample).toContain('JWT_SECRET=replace-with-a-strong-production-secret');
-    expect(envExample).not.toContain('test-only-jwt-secret');
+    expect(envExample).to.contain('NODE_ENV=production');
+    expect(envExample).to.contain('STUDENT_NAME=Yasir Kelloulou');
+    expect(envExample).to.contain('STUDENT_NUMBER=2212394');
+    expect(envExample).to.contain('JWT_SECRET=replace-with-a-strong-production-secret');
+    expect(envExample).not.to.contain('test-only-jwt-secret');
   });
 });

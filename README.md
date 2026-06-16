@@ -224,12 +224,16 @@ Expected response shape:
   "status": 200,
   "message": "Share-a-Meal API is running",
   "data": {
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "studentName": "Yasir Kelloulou",
+    "studentNumber": "2212394",
+    "description": "Backend REST API for the Share-a-Meal Programmeren 4 assignment"
   }
 }
 ```
 
 The server reads the port from `PORT`, database settings from `DB_*`, and JWT signing secret from `JWT_SECRET`.
+The info endpoint reads student metadata from `STUDENT_NAME` and `STUDENT_NUMBER`, with safe defaults configured in the app.
 
 The assignment deliverables are a zip from `main` and the deployed server URL. After the deadline, do not change or redeploy `main`.
 
