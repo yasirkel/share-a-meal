@@ -2,6 +2,7 @@ function notFoundHandler(req, res) {
   res.status(404).json({
     status: 404,
     message: `Route ${req.method} ${req.originalUrl} not found`,
+    data: null,
   });
 }
 
@@ -15,6 +16,7 @@ function errorHandler(error, req, res, next) {
   return res.status(status).json({
     status,
     message: status === 500 ? 'Internal server error' : error.message,
+    data: null,
   });
 }
 
