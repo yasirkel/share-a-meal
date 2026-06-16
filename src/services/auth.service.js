@@ -2,7 +2,7 @@ const pool = require('../config/database');
 
 async function findUserByEmail(emailAddress) {
   const [rows] = await pool.execute(
-    'SELECT id, firstName, lastName, emailAddress, password FROM user WHERE emailAddress = ? LIMIT 1',
+    'SELECT id, firstName, lastName, emailAddress, password FROM `user` WHERE emailAddress = ? LIMIT 1',
     [emailAddress]
   );
 

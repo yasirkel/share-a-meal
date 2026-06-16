@@ -1,0 +1,74 @@
+const pool = require('../config/database');
+
+const publicFields = 'id, firstName, lastName, street, city, emailAddress, phoneNumber, isActive';
+
+async function findAllUsers() {
+  const [rows] = await pool.execute(`SELECT ${publicFields} FROM \`user\``);
+  return rows;
+}
+
+async function findUserById(userId) {
+  const [rows] = await pool.execute(`SELECT ${publicFields} FROM \`user\` WHERE id = ? LIMIT 1`, [userId]);
+  return rows[0] || null;
+}
+
+async function findUserByEmail(emailAddress) {
+  const [rows] = await pool.execute(
+    `SELECT ${publicFields} FROM \`user\` WHERE emailAddress = ? LIMIT 1`,
+    [emailAddress]
+  );
+  return rows[0] || null;
+}
+
+async function createUser(user) {
+  const [result] = await pool.execute(
+    `INSERT INTO \`user\`
+      (firstName, lastName, street, city, emailAddress, password, phoneNumber, isActive)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      user.firstName,
+      user.lastName,
+      user.street || null,
+      user.city || null,
+      user.emailAddress,
+      user.password,
+      user.phoneNumber,
+      user.isActive ?? true,
+    ]
+  );
+
+  return findUserById(result.insertId);
+}
+
+async function updateUser(userId, user) {
+  await pool.execute(
+    `UPDATE \`user\`
+     SET firstName = ?, lastName = ?, street = ?, city = ?, emailAddress = ?, phoneNumber = ?
+     WHERE id = ?`,
+    [
+      user.firstName,
+      user.lastName,
+      user.street || null,
+      user.city || null,
+      user.emailAddress,
+      user.phoneNumber,
+      userId,
+    ]
+  );
+
+  return findUserById(userId);
+}
+
+async function deleteUser(userId) {
+  const [result] = await pool.execute('DELETE FROM `user` WHERE id = ?', [userId]);
+  return result.affectedRows > 0;
+}
+
+module.exports = {
+  findAllUsers,
+  findUserById,
+  findUserByEmail,
+  createUser,
+  updateUser,
+  deleteUser,
+};
