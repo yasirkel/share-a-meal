@@ -1,6 +1,8 @@
 const { expect } = require('chai');
 const fs = require('node:fs');
 const path = require('node:path');
+const request = require('supertest');
+const app = require('../src/app');
 
 describe('final hardening assets', () => {
   it('database schema contains required tables and safe relations', () => {
@@ -19,6 +21,34 @@ describe('final hardening assets', () => {
     expect(envExample).to.contain('DB_HOST=');
     expect(envExample).to.contain('DB_NAME=');
     expect(envExample).to.contain('JWT_SECRET=');
+    expect(envExample).to.contain('STUDENT_NAME=');
+    expect(envExample).to.contain('STUDENT_NUMBER=');
     expect(envExample).not.to.contain('test-only-jwt-secret');
+  });
+
+  it('GET /api/info returns student metadata and description', async () => {
+    const response = await request(app).get('/api/info');
+
+    expect(response.status).to.equal(200);
+    expect(response.body.data).to.include({
+      studentName: 'Yasir Kelloulou',
+      studentNumber: '2212394',
+      description: 'Backend REST API for the Share-a-Meal Programmeren 4 assignment',
+    });
+  });
+
+  it('project has explicit routes/controllers/services/dao separation', () => {
+    ['routes', 'controllers', 'services', 'dao', 'middleware', 'validators'].forEach((folder) => {
+      expect(fs.existsSync(path.join(__dirname, '..', 'src', folder))).to.equal(true);
+    });
+  });
+
+  it('README and package files do not reference the previous test framework', () => {
+    const readme = fs.readFileSync(path.join(__dirname, '..', 'README.md'), 'utf8');
+    const packageJson = fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8');
+    const previousTestFramework = new RegExp('je' + 'st', 'i');
+
+    expect(readme).not.to.match(previousTestFramework);
+    expect(packageJson).not.to.match(previousTestFramework);
   });
 });

@@ -10,7 +10,12 @@ describe('application routes', () => {
     expect(response.body).to.deep.equal({
       status: 200,
       message: 'Share-a-Meal API is running',
-      data: { version: '1.0.0' },
+      data: {
+        version: '1.0.0',
+        studentName: 'Yasir Kelloulou',
+        studentNumber: '2212394',
+        description: 'Backend REST API for the Share-a-Meal Programmeren 4 assignment',
+      },
     });
   });
 

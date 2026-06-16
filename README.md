@@ -20,6 +20,7 @@ src/
   server.js
   config/
   controllers/
+  dao/
   middleware/
   routes/
   services/
@@ -52,6 +53,9 @@ DB_USER=root
 DB_PASSWORD=
 DB_NAME=share_a_meal
 DB_CONNECTION_LIMIT=10
+
+STUDENT_NAME=Yasir Kelloulou
+STUDENT_NUMBER=2212394
 
 JWT_SECRET=replace-with-a-secure-secret
 JWT_EXPIRES_IN=1h
@@ -138,6 +142,8 @@ For errors, `data` is `null`.
 
 - `GET /api/info` - public API status/info
 
+Returns API version, `studentName`, `studentNumber` and a short project description.
+
 ### Authentication
 
 - `POST /api/login` - login with `emailAddress` and `password`
@@ -178,7 +184,13 @@ A user cannot join the same meal twice and cannot join when the meal is full.
 
 ## Validation Notes
 
-The API validates required fields, email addresses, Dutch mobile phone numbers, positive prices, positive participant counts and ownership rules.
+The API validates required fields, email addresses, strong passwords, Dutch mobile phone numbers, positive prices, positive participant counts and ownership rules.
+Passwords must be at least 8 characters and contain at least 1 uppercase letter and 1 digit.
+Phone numbers must start with `06` and contain exactly 10 digits.
+
+## Continuous Integration
+
+GitHub Actions runs `npm install` and `npm test` on push and pull requests targeting `development` and `main`.
 
 ## Deployment Notes
 
