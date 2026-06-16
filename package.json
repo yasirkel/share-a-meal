@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "jest --runInBand"
+    "test": "mocha \"test/**/*.test.js\" --require test/setup.js --exit"
   },
   "engines": {
     "node": ">=20"
@@ -20,8 +20,9 @@
     "mysql2": "^3.14.1"
   },
   "devDependencies": {
-    "jest": "^30.4.2",
+    "chai": "^4.5.0",
+    "mocha": "^11.7.6",
     "nodemon": "^3.1.10",
-    "supertest": "^7.1.1"
+    "supertest": "^7.2.2"
   }
 }
