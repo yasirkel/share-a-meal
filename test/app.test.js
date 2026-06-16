@@ -12,8 +12,8 @@ describe('application routes', () => {
       message: 'Share-a-Meal API is running',
       data: {
         version: '1.0.0',
-        studentName: 'Yasir Kel',
-        studentNumber: 'replace-with-your-student-number',
+        studentName: 'Yasir Kelloulou',
+        studentNumber: '2212394',
         description: 'Backend REST API for the Share-a-Meal Programmeren 4 assignment',
       },
     });

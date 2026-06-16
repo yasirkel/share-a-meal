@@ -9,8 +9,8 @@ module.exports = {
   environment: process.env.NODE_ENV || 'development',
   port: getInteger(process.env.PORT, 3000),
   student: {
-    name: process.env.STUDENT_NAME || 'Yasir Kel',
-    number: process.env.STUDENT_NUMBER || 'replace-with-your-student-number',
+    name: process.env.STUDENT_NAME || 'Yasir Kelloulou',
+    number: process.env.STUDENT_NUMBER || '2212394',
   },
   jwt: {
     secret: process.env.JWT_SECRET,

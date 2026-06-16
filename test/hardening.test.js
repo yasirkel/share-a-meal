@@ -31,8 +31,8 @@ describe('final hardening assets', () => {
 
     expect(response.status).to.equal(200);
     expect(response.body.data).to.include({
-      studentName: 'Yasir Kel',
-      studentNumber: 'replace-with-your-student-number',
+      studentName: 'Yasir Kelloulou',
+      studentNumber: '2212394',
       description: 'Backend REST API for the Share-a-Meal Programmeren 4 assignment',
     });
   });

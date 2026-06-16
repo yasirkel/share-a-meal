@@ -54,8 +54,8 @@ DB_PASSWORD=
 DB_NAME=share_a_meal
 DB_CONNECTION_LIMIT=10
 
-STUDENT_NAME=Yasir Kel
-STUDENT_NUMBER=replace-with-your-student-number
+STUDENT_NAME=Yasir Kelloulou
+STUDENT_NUMBER=2212394
 
 JWT_SECRET=replace-with-a-secure-secret
 JWT_EXPIRES_IN=1h
