@@ -34,7 +34,7 @@ function validRegistration(overrides = {}) {
     street: 'Hogeschoollaan',
     city: 'Breda',
     emailAddress: 'yasir@example.com',
-    password: 'strongpass',
+    password: 'Strongpass1',
     phoneNumber: '0612345678',
     ...overrides,
   };
@@ -75,8 +75,8 @@ describe('POST /api/user', () => {
     });
 
     const createdUser = userService.createUser.calls[0][0];
-    expect(createdUser.password).not.to.equal('strongpass');
-    expect(await bcrypt.compare('strongpass', createdUser.password)).to.equal(true);
+    expect(createdUser.password).not.to.equal('Strongpass1');
+    expect(await bcrypt.compare('Strongpass1', createdUser.password)).to.equal(true);
     expect(response.body.data.user.password).to.be.undefined;
   });
 
@@ -105,7 +105,14 @@ describe('POST /api/user', () => {
     const response = await request(app).post('/api/user').send(validRegistration({ password: 'short' }));
 
     expect(response.status).to.equal(400);
-    expect(response.body.message).to.equal('password must be at least 8 characters');
+    expect(response.body.message).to.equal('password must be at least 8 characters and contain at least 1 uppercase letter and 1 digit');
+  });
+
+  it('rejects a password without uppercase letter or digit', async () => {
+    const response = await request(app).post('/api/user').send(validRegistration({ password: 'strongpass' }));
+
+    expect(response.status).to.equal(400);
+    expect(response.body.message).to.equal('password must be at least 8 characters and contain at least 1 uppercase letter and 1 digit');
   });
 
   it('rejects an invalid phoneNumber', async () => {

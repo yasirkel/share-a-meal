@@ -1,12 +1,7 @@
-const pool = require('../config/database');
+const authDao = require('../dao/auth.dao');
 
 async function findUserByEmail(emailAddress) {
-  const [rows] = await pool.execute(
-    'SELECT id, firstName, lastName, emailAddress, password FROM `user` WHERE emailAddress = ? LIMIT 1',
-    [emailAddress]
-  );
-
-  return rows[0] || null;
+  return authDao.findUserByEmail(emailAddress);
 }
 
 module.exports = {

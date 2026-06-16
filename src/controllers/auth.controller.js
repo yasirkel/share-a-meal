@@ -4,6 +4,7 @@ const config = require('../config');
 const authService = require('../services/auth.service');
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const passwordPattern = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
 
 function validationMessage(emailAddress, password) {
   if (!emailAddress || !password) {
@@ -12,8 +13,8 @@ function validationMessage(emailAddress, password) {
   if (typeof emailAddress !== 'string' || !emailPattern.test(emailAddress)) {
     return 'emailAddress must be a valid email address';
   }
-  if (typeof password !== 'string' || password.length < 1) {
-    return 'password must be a non-empty string';
+  if (typeof password !== 'string' || !passwordPattern.test(password)) {
+    return 'password must be at least 8 characters and contain at least 1 uppercase letter and 1 digit';
   }
   return null;
 }

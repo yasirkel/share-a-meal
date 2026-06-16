@@ -13,7 +13,7 @@ const user = {
   firstName: 'Test',
   lastName: 'User',
   emailAddress: 'test@example.com',
-  password: bcrypt.hashSync('correct-password', 10),
+  password: bcrypt.hashSync('Correctpass1', 10),
 };
 
 beforeEach(() => {
@@ -26,7 +26,7 @@ describe('POST /api/login', () => {
 
     const response = await request(app).post('/api/login').send({
       emailAddress: user.emailAddress,
-      password: 'correct-password',
+      password: 'Correctpass1',
     });
 
     expect(response.status).to.equal(200);
@@ -49,7 +49,7 @@ describe('POST /api/login', () => {
 
     const response = await request(app).post('/api/login').send({
       emailAddress: user.emailAddress,
-      password: 'wrong-password',
+      password: 'Wrongpass1',
     });
 
     expect(response.status).to.equal(401);
@@ -65,7 +65,7 @@ describe('POST /api/login', () => {
 
     const response = await request(app).post('/api/login').send({
       emailAddress: 'unknown@example.com',
-      password: 'some-password',
+      password: 'Somepass1',
     });
 
     expect(response.status).to.equal(401);

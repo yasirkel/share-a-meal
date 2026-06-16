@@ -1,5 +1,5 @@
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const phoneNumberPattern = /^06[- ]?\d{8}$/;
+const phoneNumberPattern = /^06\d{8}$/;
 
 const requiredFields = ['firstName', 'lastName', 'emailAddress', 'password', 'phoneNumber'];
 
@@ -12,7 +12,12 @@ function validateEmailAddress(emailAddress) {
 }
 
 function validatePassword(password) {
-  return typeof password === 'string' && password.length >= 8;
+  return (
+    typeof password === 'string'
+    && password.length >= 8
+    && /[A-Z]/.test(password)
+    && /\d/.test(password)
+  );
 }
 
 function validatePhoneNumber(phoneNumber) {
@@ -36,7 +41,7 @@ function validateUserPayload(payload, options = {}) {
   }
 
   if (payload.password !== undefined && !validatePassword(payload.password)) {
-    errors.push('password must be at least 8 characters');
+    errors.push('password must be at least 8 characters and contain at least 1 uppercase letter and 1 digit');
   }
 
   if (payload.phoneNumber !== undefined && !validatePhoneNumber(payload.phoneNumber)) {
