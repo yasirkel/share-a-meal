@@ -1,12 +1,12 @@
 process.env.JWT_SECRET = 'test-only-jwt-secret';
 
+const { expect } = require('chai');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const request = require('supertest');
 const app = require('../src/app');
 const userService = require('../src/services/user.service');
-
-jest.mock('../src/services/user.service');
+const { stubService } = require('./helpers/stubs');
 
 const baseUser = {
   id: 42,
@@ -34,20 +34,27 @@ function validRegistration(overrides = {}) {
     street: 'Hogeschoollaan',
     city: 'Breda',
     emailAddress: 'yasir@example.com',
-    password: 'strongpass',
+    password: 'Strongpass1',
     phoneNumber: '0612345678',
     ...overrides,
   };
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  stubService(userService, [
+    'findAllUsers',
+    'findUserById',
+    'findUserByEmail',
+    'createUser',
+    'updateUser',
+    'deleteUser',
+  ]);
 });
 
 describe('POST /api/user', () => {
-  test('registers a new user with a hashed password', async () => {
-    userService.findUserByEmail.mockResolvedValue(null);
-    userService.createUser.mockImplementation(async (user) => ({
+  it('registers a new user with a hashed password', async () => {
+    userService.findUserByEmail.resolves(null);
+    userService.createUser.implements(async (user) => ({
       id: 42,
       firstName: user.firstName,
       lastName: user.lastName,
@@ -60,63 +67,70 @@ describe('POST /api/user', () => {
 
     const response = await request(app).post('/api/user').send(validRegistration());
 
-    expect(response.status).toBe(201);
-    expect(response.body).toEqual({
+    expect(response.status).to.equal(201);
+    expect(response.body).to.deep.equal({
       status: 201,
       message: 'User registered successfully',
       data: { user: baseUser },
     });
 
-    const createdUser = userService.createUser.mock.calls[0][0];
-    expect(createdUser.password).not.toBe('strongpass');
-    await expect(bcrypt.compare('strongpass', createdUser.password)).resolves.toBe(true);
-    expect(response.body.data.user.password).toBeUndefined();
+    const createdUser = userService.createUser.calls[0][0];
+    expect(createdUser.password).not.to.equal('Strongpass1');
+    expect(await bcrypt.compare('Strongpass1', createdUser.password)).to.equal(true);
+    expect(response.body.data.user.password).to.be.undefined;
   });
 
-  test('rejects missing required fields', async () => {
+  it('rejects missing required fields', async () => {
     const response = await request(app).post('/api/user').send(validRegistration({ firstName: '' }));
 
-    expect(response.status).toBe(400);
-    expect(response.body).toEqual({
+    expect(response.status).to.equal(400);
+    expect(response.body).to.deep.equal({
       status: 400,
       message: 'firstName is required',
       data: null,
     });
-    expect(userService.createUser).not.toHaveBeenCalled();
+    expect(userService.createUser.calls).to.have.lengthOf(0);
   });
 
-  test('rejects an invalid emailAddress', async () => {
+  it('rejects an invalid emailAddress', async () => {
     const response = await request(app).post('/api/user').send(
       validRegistration({ emailAddress: 'not-an-email' })
     );
 
-    expect(response.status).toBe(400);
-    expect(response.body.message).toBe('emailAddress must be a valid email address');
+    expect(response.status).to.equal(400);
+    expect(response.body.message).to.equal('emailAddress must be a valid email address');
   });
 
-  test('rejects a weak password', async () => {
+  it('rejects a weak password', async () => {
     const response = await request(app).post('/api/user').send(validRegistration({ password: 'short' }));
 
-    expect(response.status).toBe(400);
-    expect(response.body.message).toBe('password must be at least 8 characters');
+    expect(response.status).to.equal(400);
+    expect(response.body.message).to.equal('password must be at least 8 characters and contain at least 1 uppercase letter and 1 digit');
   });
 
-  test('rejects an invalid phoneNumber', async () => {
+  it('rejects a password without uppercase letter or digit', async () => {
+    const response = await request(app).post('/api/user').send(validRegistration({ password: 'strongpass' }));
+
+    expect(response.status).to.equal(400);
+    expect(response.body.message).to.equal('password must be at least 8 characters and contain at least 1 uppercase letter and 1 digit');
+  });
+
+  it('rejects an invalid phoneNumber', async () => {
     const response = await request(app).post('/api/user').send(
       validRegistration({ phoneNumber: '12345' })
     );
 
-    expect(response.status).toBe(400);
-    expect(response.body.message).toBe('phoneNumber must be a valid Dutch mobile number');
+    expect(response.status).to.equal(400);
+    expect(response.body.message).to.equal('phoneNumber must be a valid Dutch mobile number');
   });
 
-  test('rejects a duplicate emailAddress', async () => {
-    userService.findUserByEmail.mockResolvedValue(baseUser);
+  it('rejects a duplicate emailAddress', async () => {
+    userService.findUserByEmail.resolves(baseUser);
 
     const response = await request(app).post('/api/user').send(validRegistration());
 
-    expect(response.status).toBe(409);
-    expect(response.body).toEqual({
+    expect(response.status).to.equal(409);
+    expect(response.body).to.deep.equal({
       status: 409,
       message: 'emailAddress is already in use',
       data: null,
@@ -125,141 +139,142 @@ describe('POST /api/user', () => {
 });
 
 describe('protected user endpoints', () => {
-  test('rejects GET /api/user without a token', async () => {
+  it('rejects GET /api/user without a token', async () => {
     const response = await request(app).get('/api/user');
 
-    expect(response.status).toBe(401);
-    expect(response.body).toEqual({
+    expect(response.status).to.equal(401);
+    expect(response.body).to.deep.equal({
       status: 401,
       message: 'Authentication token is required',
       data: null,
     });
   });
 
-  test('returns all users', async () => {
-    userService.findAllUsers.mockResolvedValue([baseUser]);
+  it('returns all users', async () => {
+    userService.findAllUsers.resolves([baseUser]);
 
     const response = await request(app)
       .get('/api/user')
       .set('Authorization', `Bearer ${tokenFor()}`);
 
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual({
+    expect(response.status).to.equal(200);
+    expect(response.body).to.deep.equal({
       status: 200,
       message: 'Users retrieved successfully',
       data: { users: [baseUser] },
     });
   });
 
-  test('returns own profile', async () => {
-    userService.findUserById.mockResolvedValue(baseUser);
+  it('returns own profile', async () => {
+    userService.findUserById.resolves(baseUser);
 
     const response = await request(app)
       .get('/api/user/profile')
       .set('Authorization', `Bearer ${tokenFor()}`);
 
-    expect(response.status).toBe(200);
-    expect(userService.findUserById).toHaveBeenCalledWith(42);
-    expect(response.body.data.user).toEqual(baseUser);
+    expect(response.status).to.equal(200);
+    expect(userService.findUserById.calls).to.deep.equal([[42]]);
+    expect(response.body.data.user).to.deep.equal(baseUser);
   });
 
-  test('returns a user by id', async () => {
-    userService.findUserById.mockResolvedValue(baseUser);
+  it('returns a user by id', async () => {
+    userService.findUserById.resolves(baseUser);
 
     const response = await request(app)
       .get('/api/user/42')
       .set('Authorization', `Bearer ${tokenFor()}`);
 
-    expect(response.status).toBe(200);
-    expect(response.body.message).toBe('User retrieved successfully');
-    expect(response.body.data.user).toEqual(baseUser);
+    expect(response.status).to.equal(200);
+    expect(response.body.message).to.equal('User retrieved successfully');
+    expect(response.body.data.user).to.deep.equal(baseUser);
   });
 
-  test('returns 404 when a user id does not exist', async () => {
-    userService.findUserById.mockResolvedValue(null);
+  it('returns 404 when a user id does not exist', async () => {
+    userService.findUserById.resolves(null);
 
     const response = await request(app)
       .get('/api/user/999')
       .set('Authorization', `Bearer ${tokenFor()}`);
 
-    expect(response.status).toBe(404);
-    expect(response.body).toEqual({
+    expect(response.status).to.equal(404);
+    expect(response.body).to.deep.equal({
       status: 404,
       message: 'User not found',
       data: null,
     });
   });
 
-  test('updates own user', async () => {
+  it('updates own user', async () => {
     const updatedUser = { ...baseUser, firstName: 'Updated' };
-    userService.findUserById.mockResolvedValueOnce(baseUser);
-    userService.findUserByEmail.mockResolvedValueOnce(baseUser);
-    userService.updateUser.mockResolvedValue(updatedUser);
+    userService.findUserById.resolvesOnce(baseUser);
+    userService.findUserByEmail.resolvesOnce(baseUser);
+    userService.updateUser.resolves(updatedUser);
 
     const response = await request(app)
       .put('/api/user/42')
       .set('Authorization', `Bearer ${tokenFor()}`)
       .send(validRegistration({ firstName: 'Updated' }));
 
-    expect(response.status).toBe(200);
-    expect(userService.updateUser).toHaveBeenCalledWith(42, expect.objectContaining({
+    expect(response.status).to.equal(200);
+    expect(userService.updateUser.calls[0][0]).to.equal(42);
+    expect(userService.updateUser.calls[0][1]).to.include({
       firstName: 'Updated',
       emailAddress: 'yasir@example.com',
-    }));
-    expect(response.body.data.user).toEqual(updatedUser);
+    });
+    expect(response.body.data.user).to.deep.equal(updatedUser);
   });
 
-  test('rejects update for another user', async () => {
+  it('rejects update for another user', async () => {
     const response = await request(app)
       .put('/api/user/99')
       .set('Authorization', `Bearer ${tokenFor()}`)
       .send(validRegistration());
 
-    expect(response.status).toBe(403);
-    expect(response.body).toEqual({
+    expect(response.status).to.equal(403);
+    expect(response.body).to.deep.equal({
       status: 403,
       message: 'You can only update or delete your own user',
       data: null,
     });
-    expect(userService.updateUser).not.toHaveBeenCalled();
+    expect(userService.updateUser.calls).to.have.lengthOf(0);
   });
 
-  test('rejects update when emailAddress belongs to another user', async () => {
-    userService.findUserById.mockResolvedValueOnce(baseUser);
-    userService.findUserByEmail.mockResolvedValueOnce({ ...baseUser, id: 99 });
+  it('rejects update when emailAddress belongs to another user', async () => {
+    userService.findUserById.resolvesOnce(baseUser);
+    userService.findUserByEmail.resolvesOnce({ ...baseUser, id: 99 });
 
     const response = await request(app)
       .put('/api/user/42')
       .set('Authorization', `Bearer ${tokenFor()}`)
       .send(validRegistration({ emailAddress: 'other@example.com' }));
 
-    expect(response.status).toBe(409);
-    expect(response.body.message).toBe('emailAddress is already in use');
+    expect(response.status).to.equal(409);
+    expect(response.body.message).to.equal('emailAddress is already in use');
   });
 
-  test('deletes own user', async () => {
-    userService.findUserById.mockResolvedValue(baseUser);
-    userService.deleteUser.mockResolvedValue(true);
+  it('deletes own user', async () => {
+    userService.findUserById.resolves(baseUser);
+    userService.deleteUser.resolves(true);
 
     const response = await request(app)
       .delete('/api/user/42')
       .set('Authorization', `Bearer ${tokenFor()}`);
 
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual({
+    expect(response.status).to.equal(200);
+    expect(response.body).to.deep.equal({
       status: 200,
       message: 'User deleted successfully',
       data: null,
     });
-    expect(userService.deleteUser).toHaveBeenCalledWith(42);
+    expect(userService.deleteUser.calls).to.deep.equal([[42]]);
   });
 
-  test('rejects delete for another user', async () => {
+  it('rejects delete for another user', async () => {
     const response = await request(app)
       .delete('/api/user/99')
       .set('Authorization', `Bearer ${tokenFor()}`);
 
-    expect(response.status).toBe(403);
-    expect(userService.deleteUser).not.toHaveBeenCalled();
+    expect(response.status).to.equal(403);
+    expect(userService.deleteUser.calls).to.have.lengthOf(0);
   });
 });

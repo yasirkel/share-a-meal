@@ -9,7 +9,7 @@ Backend REST API for the HBO Programmeren 4 Share-a-Meal assignment.
 - MySQL with `mysql2`
 - JWT authentication with `jsonwebtoken`
 - Password hashing with `bcrypt`
-- Jest and Supertest for automated tests
+- Mocha, Chai and Supertest for automated tests
 - Configuration through environment variables
 
 ## Project Structure
@@ -20,6 +20,7 @@ src/
   server.js
   config/
   controllers/
+  dao/
   middleware/
   routes/
   services/
@@ -52,6 +53,9 @@ DB_USER=root
 DB_PASSWORD=
 DB_NAME=share_a_meal
 DB_CONNECTION_LIMIT=10
+
+STUDENT_NAME=Yasir Kelloulou
+STUDENT_NUMBER=2212394
 
 JWT_SECRET=replace-with-a-secure-secret
 JWT_EXPIRES_IN=1h
@@ -116,7 +120,7 @@ GET /api/info
 npm test
 ```
 
-The test suite uses Jest and Supertest. Database-dependent services are mocked in API tests so the suite can run without a local MySQL server.
+The test suite uses Mocha, Chai and Supertest. Database-dependent services are stubbed in API tests so the suite can run without a local MySQL server.
 
 ## API Response Format
 
@@ -137,6 +141,8 @@ For errors, `data` is `null`.
 ### Info
 
 - `GET /api/info` - public API status/info
+
+Returns API version, `studentName`, `studentNumber` and a short project description.
 
 ### Authentication
 
@@ -178,7 +184,13 @@ A user cannot join the same meal twice and cannot join when the meal is full.
 
 ## Validation Notes
 
-The API validates required fields, email addresses, Dutch mobile phone numbers, positive prices, positive participant counts and ownership rules.
+The API validates required fields, email addresses, strong passwords, Dutch mobile phone numbers, positive prices, positive participant counts and ownership rules.
+Passwords must be at least 8 characters and contain at least 1 uppercase letter and 1 digit.
+Phone numbers must start with `06` and contain exactly 10 digits.
+
+## Continuous Integration
+
+GitHub Actions runs `npm install` and `npm test` on push and pull requests targeting `development` and `main`.
 
 ## Deployment Notes
 
