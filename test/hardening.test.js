@@ -20,4 +20,15 @@ describe('final hardening assets', () => {
     expect(envExample).toContain('JWT_SECRET=');
     expect(envExample).not.toContain('test-only-jwt-secret');
   });
+
+  test('production environment example is available without real secrets', () => {
+    const envExample = fs.readFileSync(
+      path.join(__dirname, '..', '.env.production.example'),
+      'utf8'
+    );
+
+    expect(envExample).toContain('NODE_ENV=production');
+    expect(envExample).toContain('JWT_SECRET=replace-with-a-strong-production-secret');
+    expect(envExample).not.toContain('test-only-jwt-secret');
+  });
 });

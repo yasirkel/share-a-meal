@@ -186,10 +186,38 @@ For deployment:
 
 1. Provision a MySQL database.
 2. Run `database/schema.sql` on the deployment database.
-3. Configure environment variables on the hosting platform.
+3. Configure environment variables on the hosting platform. Use `.env.production.example` as a checklist, but do not commit real production values.
 4. Set a strong `JWT_SECRET`.
-5. Start the server with `npm start`.
-6. Verify `GET /api/info` on the public URL.
+5. Install dependencies with `npm install`.
+6. Start the server with `npm start`.
+7. Verify `GET /api/info` on the public URL.
+
+Minimal production command sequence:
+
+```shell
+npm install
+npm start
+```
+
+Health check after deployment:
+
+```text
+GET https://your-deployed-api.example.com/api/info
+```
+
+Expected response shape:
+
+```json
+{
+  "status": 200,
+  "message": "Share-a-Meal API is running",
+  "data": {
+    "version": "1.0.0"
+  }
+}
+```
+
+The server reads the port from `PORT`, database settings from `DB_*`, and JWT signing secret from `JWT_SECRET`.
 
 The assignment deliverables are a zip from `main` and the deployed server URL. After the deadline, do not change or redeploy `main`.
 
@@ -204,6 +232,7 @@ The assignment deliverables are a zip from `main` and the deployed server URL. A
   - `feature/meals`
   - `feature/participants`
   - `feature/final-hardening`
+  - `feature/deployment`
 - Feature branches are pushed to origin.
 - Feature branches are merged into `development` only after approval.
 - `main` is not changed directly.
