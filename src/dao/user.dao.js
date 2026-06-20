@@ -1,9 +1,23 @@
 const pool = require('../config/database');
 
 const publicFields = 'id, firstName, lastName, street, city, emailAddress, phoneNumber, isActive';
+const allowedFilterFields = [
+  'firstName',
+  'lastName',
+  'emailAddress',
+  'city',
+  'street',
+  'phoneNumber',
+  'isActive',
+];
 
-async function findAllUsers() {
-  const [rows] = await pool.execute(`SELECT ${publicFields} FROM \`user\``);
+async function findAllUsers(filters = {}) {
+  const filterEntries = Object.entries(filters);
+  const whereClauses = filterEntries.map(([field]) => `\`${field}\` = ?`);
+  const values = filterEntries.map(([, value]) => value);
+  const where = whereClauses.length > 0 ? ` WHERE ${whereClauses.join(' AND ')}` : '';
+
+  const [rows] = await pool.execute(`SELECT ${publicFields} FROM \`user\`${where}`, values);
   return rows;
 }
 
@@ -65,6 +79,7 @@ async function deleteUser(userId) {
 }
 
 module.exports = {
+  allowedFilterFields,
   findAllUsers,
   findUserById,
   findUserByEmail,

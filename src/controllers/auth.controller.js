@@ -33,7 +33,15 @@ async function login(req, res, next) {
     }
 
     const user = await authService.findUserByEmail(emailAddress);
-    const passwordMatches = user && (await bcrypt.compare(password, user.password));
+    if (!user) {
+      return res.status(404).json({
+        status: 404,
+        message: 'User not found',
+        data: null,
+      });
+    }
+
+    const passwordMatches = await bcrypt.compare(password, user.password);
 
     if (!passwordMatches) {
       return res.status(401).json({

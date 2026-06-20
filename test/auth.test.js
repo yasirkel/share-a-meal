@@ -68,8 +68,12 @@ describe('POST /api/login', () => {
       password: 'Somepass1',
     });
 
-    expect(response.status).to.equal(401);
-    expect(response.body.data).to.equal(null);
+    expect(response.status).to.equal(404);
+    expect(response.body).to.deep.equal({
+      status: 404,
+      message: 'User not found',
+      data: null,
+    });
   });
 
   it('rejects missing fields', async () => {
