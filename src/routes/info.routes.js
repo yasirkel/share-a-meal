@@ -11,7 +11,7 @@ router.get('/', (req, res) => {
       version: '1.0.0',
       studentName: config.student.name,
       studentNumber: config.student.number,
-      description: 'Backend REST API for the Share-a-Meal Programmeren 4 assignment',
+      description: config.description,
     },
   });
 });

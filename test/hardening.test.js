@@ -19,10 +19,13 @@ describe('final hardening assets', () => {
     const envExample = fs.readFileSync(path.join(__dirname, '..', '.env.example'), 'utf8');
 
     expect(envExample).to.contain('DB_HOST=');
+    expect(envExample).to.contain('DB_DATABASE=');
     expect(envExample).to.contain('DB_NAME=');
+    expect(envExample).to.contain('DB_SSL=false');
     expect(envExample).to.contain('JWT_SECRET=');
     expect(envExample).to.contain('STUDENT_NAME=');
     expect(envExample).to.contain('STUDENT_NUMBER=');
+    expect(envExample).to.contain('APP_DESCRIPTION=');
     expect(envExample).not.to.contain('test-only-jwt-secret');
   });
 
@@ -59,9 +62,14 @@ describe('final hardening assets', () => {
     );
 
     expect(envExample).to.contain('NODE_ENV=production');
+    expect(envExample).to.contain('DB_DATABASE=');
+    expect(envExample).to.contain('DB_SSL=true');
+    expect(envExample).to.contain('DB_SSL_REJECT_UNAUTHORIZED=false');
+    expect(envExample).to.contain('JWT_SECRET=');
+    expect(envExample).not.to.contain('JWT_SECRET=replace-with-a-strong-production-secret');
     expect(envExample).to.contain('STUDENT_NAME=Yasir Kelloulou');
     expect(envExample).to.contain('STUDENT_NUMBER=2212394');
-    expect(envExample).to.contain('JWT_SECRET=replace-with-a-strong-production-secret');
+    expect(envExample).to.contain('APP_DESCRIPTION=Backend REST API for the Share-a-Meal Programmeren 4 assignment');
     expect(envExample).not.to.contain('test-only-jwt-secret');
   });
 });

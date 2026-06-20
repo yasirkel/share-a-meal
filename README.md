@@ -52,10 +52,14 @@ DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=
 DB_NAME=share_a_meal
+DB_DATABASE=share_a_meal
+DB_SSL=false
+DB_SSL_REJECT_UNAUTHORIZED=false
 DB_CONNECTION_LIMIT=10
 
 STUDENT_NAME=Yasir Kelloulou
 STUDENT_NUMBER=2212394
+APP_DESCRIPTION=Backend REST API for the Share-a-Meal Programmeren 4 assignment
 
 JWT_SECRET=replace-with-a-secure-secret
 JWT_EXPIRES_IN=1h
@@ -194,7 +198,62 @@ GitHub Actions runs `npm install` and `npm test` on push and pull requests targe
 
 ## Deployment Notes
 
-For deployment:
+This project can be deployed fully free with:
+
+- Backend: Render Free Web Service
+- Database: Aiven Free MySQL
+
+### Render Free Web Service
+
+Create a new Render Web Service from the GitHub repository.
+
+Recommended settings for a test deploy:
+
+- Branch: `feature/deployment`
+- Runtime: Node
+- Build Command: `npm install`
+- Start Command: `npm start`
+- Healthcheck: `GET /api/info`
+
+For the final hand-in deploy, switch the Render branch to `main` after the final approved merge.
+
+Set these Render environment variables:
+
+```env
+NODE_ENV=production
+PORT=3000
+DB_HOST=
+DB_PORT=3306
+DB_USER=
+DB_PASSWORD=
+DB_DATABASE=
+DB_SSL=true
+DB_SSL_REJECT_UNAUTHORIZED=false
+DB_CONNECTION_LIMIT=10
+JWT_SECRET=
+JWT_EXPIRES_IN=1h
+STUDENT_NAME=Yasir Kelloulou
+STUDENT_NUMBER=2212394
+APP_DESCRIPTION=Backend REST API for the Share-a-Meal Programmeren 4 assignment
+```
+
+Do not paste secrets into source files. Only add real values in Render's environment variable dashboard.
+
+### Aiven Free MySQL
+
+1. Create an Aiven MySQL service.
+2. Copy the connection details from Aiven into the Render env vars:
+   - Aiven host -> `DB_HOST`
+   - Aiven port -> `DB_PORT`
+   - Aiven user -> `DB_USER`
+   - Aiven password -> `DB_PASSWORD`
+   - Aiven database name -> `DB_DATABASE`
+3. Set `DB_SSL=true` for Aiven.
+4. Keep `DB_SSL_REJECT_UNAUTHORIZED=false` unless you configure CA certificates separately.
+5. Run `database/schema.sql` on the Aiven database.
+6. Optionally run `database/seed.sql` for demo data.
+
+### Generic Deployment Checklist
 
 1. Provision a MySQL database.
 2. Run `database/schema.sql` on the deployment database.
