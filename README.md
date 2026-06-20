@@ -192,9 +192,28 @@ The API validates required fields, email addresses, strong passwords, Dutch mobi
 Passwords must be at least 8 characters and contain at least 1 uppercase letter and 1 digit.
 Phone numbers must start with `06` and contain exactly 10 digits.
 
-## Continuous Integration
+## CI/CD
 
-GitHub Actions runs `npm install` and `npm test` on push and pull requests targeting `development` and `main`.
+GitHub Actions uses `.github/workflows/ci-cd.yml`.
+
+The pipeline runs on:
+
+- push to `development`
+- push to `main`
+- pull requests targeting `development`
+- pull requests targeting `main`
+
+The `test` job uses Node.js 20 and runs:
+
+```shell
+npm install
+npm test
+```
+
+The `deploy` job only runs after the test job passes on a direct push to `main`.
+It does not run on `development` and does not run for pull requests.
+The deployment is triggered through a Render deploy hook stored as the GitHub Actions secret `RENDER_DEPLOY_HOOK_URL`.
+Do not commit the deploy hook URL or any other secrets.
 
 ## Deployment Notes
 
@@ -216,6 +235,13 @@ Recommended settings for a test deploy:
 - Healthcheck: `GET /api/info`
 
 For the final hand-in deploy, switch the Render branch to `main` after the final approved merge.
+After a push to `main`, GitHub Actions runs the tests first and then calls the Render deploy hook when the tests pass.
+
+Required GitHub repository secret:
+
+```text
+RENDER_DEPLOY_HOOK_URL
+```
 
 Set these Render environment variables:
 
@@ -238,10 +264,11 @@ APP_DESCRIPTION=Backend REST API for the Share-a-Meal Programmeren 4 assignment
 ```
 
 Do not paste secrets into source files. Only add real values in Render's environment variable dashboard.
+Render stores the production environment variables for the Aiven MySQL database and `JWT_SECRET`.
 
 ### Aiven Free MySQL
 
-1. Create an Aiven MySQL service.
+1. Create an Aiven MySQL service. Aiven hosts the online MySQL database for the deployed API.
 2. Copy the connection details from Aiven into the Render env vars:
    - Aiven host -> `DB_HOST`
    - Aiven port -> `DB_PORT`
