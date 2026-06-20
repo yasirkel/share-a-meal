@@ -52,10 +52,14 @@ DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=
 DB_NAME=share_a_meal
+DB_DATABASE=share_a_meal
+DB_SSL=false
+DB_SSL_REJECT_UNAUTHORIZED=false
 DB_CONNECTION_LIMIT=10
 
 STUDENT_NAME=Yasir Kelloulou
 STUDENT_NUMBER=2212394
+APP_DESCRIPTION=Backend REST API for the Share-a-Meal Programmeren 4 assignment
 
 JWT_SECRET=replace-with-a-secure-secret
 JWT_EXPIRES_IN=1h
@@ -188,20 +192,134 @@ The API validates required fields, email addresses, strong passwords, Dutch mobi
 Passwords must be at least 8 characters and contain at least 1 uppercase letter and 1 digit.
 Phone numbers must start with `06` and contain exactly 10 digits.
 
-## Continuous Integration
+## CI/CD
 
-GitHub Actions runs `npm install` and `npm test` on push and pull requests targeting `development` and `main`.
+GitHub Actions uses `.github/workflows/ci-cd.yml`.
+
+The pipeline runs on:
+
+- push to `development`
+- push to `main`
+- pull requests targeting `development`
+- pull requests targeting `main`
+
+The `test` job uses Node.js 20 and runs:
+
+```shell
+npm install
+npm test
+```
+
+The `deploy` job only runs after the test job passes on a direct push to `main`.
+It does not run on `development` and does not run for pull requests.
+The deployment is triggered through a Render deploy hook stored as the GitHub Actions secret `RENDER_DEPLOY_HOOK_URL`.
+Do not commit the deploy hook URL or any other secrets.
 
 ## Deployment Notes
 
-For deployment:
+This project can be deployed fully free with:
+
+- Backend: Render Free Web Service
+- Database: Aiven Free MySQL
+
+### Render Free Web Service
+
+Create a new Render Web Service from the GitHub repository.
+
+Recommended settings for a test deploy:
+
+- Branch: `feature/deployment`
+- Runtime: Node
+- Build Command: `npm install`
+- Start Command: `npm start`
+- Healthcheck: `GET /api/info`
+
+For the final hand-in deploy, switch the Render branch to `main` after the final approved merge.
+After a push to `main`, GitHub Actions runs the tests first and then calls the Render deploy hook when the tests pass.
+
+Required GitHub repository secret:
+
+```text
+RENDER_DEPLOY_HOOK_URL
+```
+
+Set these Render environment variables:
+
+```env
+NODE_ENV=production
+PORT=3000
+DB_HOST=
+DB_PORT=3306
+DB_USER=
+DB_PASSWORD=
+DB_DATABASE=
+DB_SSL=true
+DB_SSL_REJECT_UNAUTHORIZED=false
+DB_CONNECTION_LIMIT=10
+JWT_SECRET=
+JWT_EXPIRES_IN=1h
+STUDENT_NAME=Yasir Kelloulou
+STUDENT_NUMBER=2212394
+APP_DESCRIPTION=Backend REST API for the Share-a-Meal Programmeren 4 assignment
+```
+
+Do not paste secrets into source files. Only add real values in Render's environment variable dashboard.
+Render stores the production environment variables for the Aiven MySQL database and `JWT_SECRET`.
+
+### Aiven Free MySQL
+
+1. Create an Aiven MySQL service. Aiven hosts the online MySQL database for the deployed API.
+2. Copy the connection details from Aiven into the Render env vars:
+   - Aiven host -> `DB_HOST`
+   - Aiven port -> `DB_PORT`
+   - Aiven user -> `DB_USER`
+   - Aiven password -> `DB_PASSWORD`
+   - Aiven database name -> `DB_DATABASE`
+3. Set `DB_SSL=true` for Aiven.
+4. Keep `DB_SSL_REJECT_UNAUTHORIZED=false` unless you configure CA certificates separately.
+5. Run `database/schema.sql` on the Aiven database.
+6. Optionally run `database/seed.sql` for demo data.
+
+### Generic Deployment Checklist
 
 1. Provision a MySQL database.
 2. Run `database/schema.sql` on the deployment database.
-3. Configure environment variables on the hosting platform.
+3. Configure environment variables on the hosting platform. Use `.env.production.example` as a checklist, but do not commit real production values.
 4. Set a strong `JWT_SECRET`.
-5. Start the server with `npm start`.
-6. Verify `GET /api/info` on the public URL.
+5. Install dependencies with `npm install`.
+6. Start the server with `npm start`.
+7. Verify `GET /api/info` on the public URL.
+
+Minimal production command sequence:
+
+```shell
+npm install
+npm start
+```
+
+Health check after deployment:
+
+```text
+GET https://your-deployed-api.example.com/api/info
+```
+
+Expected response shape:
+
+```json
+{
+  "status": 200,
+  "message": "Share-a-Meal API is running",
+  "data": {
+    "version": "1.0.0",
+    "studentName": "Yasir Kelloulou",
+    "studentNumber": "2212394",
+    "description": "Backend REST API for the Share-a-Meal Programmeren 4 assignment"
+  }
+}
+```
+
+The server reads the port from `PORT`, database settings from `DB_*`, and JWT signing secret from `JWT_SECRET`.
+The info endpoint reads student metadata from `STUDENT_NAME` and `STUDENT_NUMBER`, with safe defaults configured in the app.
 
 The assignment deliverables are a zip from `main` and the deployed server URL. After the deadline, do not change or redeploy `main`.
 
@@ -216,6 +334,7 @@ The assignment deliverables are a zip from `main` and the deployed server URL. A
   - `feature/meals`
   - `feature/participants`
   - `feature/final-hardening`
+  - `feature/deployment`
 - Feature branches are pushed to origin.
 - Feature branches are merged into `development` only after approval.
 - `main` is not changed directly.
