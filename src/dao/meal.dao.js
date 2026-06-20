@@ -132,6 +132,22 @@ async function findMealById(mealId) {
   return attachParticipants(mapMeal(rows[0]));
 }
 
+async function findMealsByCookId(cookId, options = {}) {
+  const params = [cookId];
+  const dateFilter = options.futureOnly ? ' AND m.dateTime >= CURDATE()' : '';
+
+  const [rows] = await pool.execute(
+    `SELECT ${mealFields}, ${userFields}
+     FROM meal m
+     LEFT JOIN \`user\` u ON u.id = m.cookId
+     WHERE m.cookId = ?${dateFilter}`,
+    params
+  );
+
+  const meals = rows.map((row) => mapMeal(row));
+  return Promise.all(meals.map(attachParticipants));
+}
+
 async function createMeal(meal, cookId) {
   const [result] = await pool.execute(
     `INSERT INTO meal
@@ -211,6 +227,7 @@ async function deleteMeal(mealId) {
 module.exports = {
   findAllMeals,
   findMealById,
+  findMealsByCookId,
   createMeal,
   updateMeal,
   deleteMeal,

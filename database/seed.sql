@@ -13,6 +13,7 @@ ON DUPLICATE KEY UPDATE
   lastName = VALUES(lastName),
   street = VALUES(street),
   city = VALUES(city),
+  emailAddress = VALUES(emailAddress),
   password = VALUES(password),
   phoneNumber = VALUES(phoneNumber),
   isActive = VALUES(isActive);

@@ -164,6 +164,9 @@ Successful login returns a JWT and user data without password.
 - `DELETE /api/user/:userId` - delete own user only, JWT required
 
 Passwords are hashed with bcrypt and never returned in user responses.
+`GET /api/user` supports at most 2 filters using these fields: `firstName`, `lastName`, `emailAddress`, `city`, `street`, `phoneNumber`, `isActive`.
+Unsupported filter fields return `400` with a clear JSON error response.
+`GET /api/user/profile` and `GET /api/user/:userId` include meals offered by that user; profile only includes meals from today or the future.
 
 ### Meals
 
