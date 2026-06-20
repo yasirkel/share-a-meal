@@ -20,6 +20,45 @@ function sanitizeUser(user) {
   return publicUser;
 }
 
+function sanitizeMeal(meal) {
+  if (!meal) {
+    return null;
+  }
+
+  return {
+    ...meal,
+    cook: sanitizeUser(meal.cook),
+    participants: Array.isArray(meal.participants)
+      ? meal.participants.map(sanitizeUser)
+      : [],
+  };
+}
+
+function parseUserFilters(query) {
+  const filters = { ...query };
+  const fields = Object.keys(filters);
+
+  if (fields.length > 2) {
+    return {
+      error: 'A maximum of 2 filter fields is allowed',
+      filters: null,
+    };
+  }
+
+  const invalidField = fields.find((field) => !userService.allowedFilterFields.includes(field));
+  if (invalidField) {
+    return {
+      error: `Filter field ${invalidField} is not supported`,
+      filters: null,
+    };
+  }
+
+  return {
+    error: null,
+    filters,
+  };
+}
+
 function ownerOnly(req, res, userId) {
   if (req.user.userId !== userId) {
     json(res, 403, 'You can only update or delete your own user', null);
@@ -58,7 +97,12 @@ async function register(req, res, next) {
 
 async function getAll(req, res, next) {
   try {
-    const users = await userService.findAllUsers();
+    const { error, filters } = parseUserFilters(req.query);
+    if (error) {
+      return json(res, 400, error, null);
+    }
+
+    const users = await userService.findAllUsers(filters);
     return json(res, 200, 'Users retrieved successfully', {
       users: users.map(sanitizeUser),
     });
@@ -75,8 +119,11 @@ async function getProfile(req, res, next) {
       return json(res, 404, 'User not found', null);
     }
 
+    const meals = await userService.findMealsByCookId(req.user.userId, { futureOnly: true });
+
     return json(res, 200, 'Profile retrieved successfully', {
       user: sanitizeUser(user),
+      meals: meals.map(sanitizeMeal),
     });
   } catch (error) {
     return next(error);
@@ -96,8 +143,11 @@ async function getById(req, res, next) {
       return json(res, 404, 'User not found', null);
     }
 
+    const meals = await userService.findMealsByCookId(userId);
+
     return json(res, 200, 'User retrieved successfully', {
       user: sanitizeUser(user),
+      meals: meals.map(sanitizeMeal),
     });
   } catch (error) {
     return next(error);
@@ -158,7 +208,7 @@ async function remove(req, res, next) {
     }
 
     await userService.deleteUser(userId);
-    return json(res, 200, 'User deleted successfully', null);
+    return json(res, 200, `User with ID #${userId} has been deleted`, null);
   } catch (error) {
     return next(error);
   }

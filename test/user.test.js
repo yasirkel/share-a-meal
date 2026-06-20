@@ -19,6 +19,30 @@ const baseUser = {
   isActive: true,
 };
 
+const inactiveUser = {
+  id: 43,
+  firstName: 'Marieke',
+  lastName: 'Van Dam',
+  street: 'Stationsplein',
+  city: 'Tilburg',
+  emailAddress: 'marieke@example.com',
+  phoneNumber: '0611111111',
+  isActive: false,
+};
+
+const offeredMeal = {
+  id: 7,
+  name: 'Pasta pesto',
+  description: 'Verse pasta met pesto',
+  price: 8.5,
+  dateTime: '2026-07-01T18:30:00.000Z',
+  maxAmountOfParticipants: 4,
+  imageUrl: 'https://example.com/pasta.jpg',
+  cookId: 42,
+  cook: { ...baseUser, password: 'secret-hash' },
+  participants: [{ ...inactiveUser, password: 'secret-hash' }],
+};
+
 function tokenFor(user = baseUser) {
   return jwt.sign(
     { userId: user.id, emailAddress: user.emailAddress },
@@ -45,6 +69,7 @@ beforeEach(() => {
     'findAllUsers',
     'findUserById',
     'findUserByEmail',
+    'findMealsByCookId',
     'createUser',
     'updateUser',
     'deleteUser',
@@ -163,10 +188,76 @@ describe('protected user endpoints', () => {
       message: 'Users retrieved successfully',
       data: { users: [baseUser] },
     });
+    expect(userService.findAllUsers.calls).to.deep.equal([[{}]]);
+  });
+
+  it('filters users by isActive=0', async () => {
+    userService.findAllUsers.resolves([inactiveUser]);
+
+    const response = await request(app)
+      .get('/api/user?isActive=0')
+      .set('Authorization', `Bearer ${tokenFor()}`);
+
+    expect(response.status).to.equal(200);
+    expect(userService.findAllUsers.calls).to.deep.equal([[{ isActive: '0' }]]);
+    expect(response.body.data.users).to.deep.equal([inactiveUser]);
+  });
+
+  it('filters users by city', async () => {
+    userService.findAllUsers.resolves([baseUser]);
+
+    const response = await request(app)
+      .get('/api/user?city=Breda')
+      .set('Authorization', `Bearer ${tokenFor()}`);
+
+    expect(response.status).to.equal(200);
+    expect(userService.findAllUsers.calls).to.deep.equal([[{ city: 'Breda' }]]);
+    expect(response.body.data.users).to.deep.equal([baseUser]);
+  });
+
+  it('filters users with 2 valid filters', async () => {
+    userService.findAllUsers.resolves([baseUser]);
+
+    const response = await request(app)
+      .get('/api/user?city=Breda&isActive=1')
+      .set('Authorization', `Bearer ${tokenFor()}`);
+
+    expect(response.status).to.equal(200);
+    expect(userService.findAllUsers.calls).to.deep.equal([[{ city: 'Breda', isActive: '1' }]]);
+    expect(response.body.data.users).to.deep.equal([baseUser]);
+  });
+
+  it('rejects user filtering with more than 2 filters', async () => {
+    const response = await request(app)
+      .get('/api/user?city=Breda&isActive=1&firstName=Yasir')
+      .set('Authorization', `Bearer ${tokenFor()}`);
+
+    expect(response.status).to.equal(400);
+    expect(response.body).to.deep.equal({
+      status: 400,
+      message: 'A maximum of 2 filter fields is allowed',
+      data: null,
+    });
+    expect(userService.findAllUsers.calls).to.have.lengthOf(0);
+  });
+
+  it('rejects user filtering with an unsupported field', async () => {
+    const response = await request(app)
+      .get('/api/user?unknown=value')
+      .set('Authorization', `Bearer ${tokenFor()}`);
+
+    expect(response.status).to.equal(400);
+    expect(response.body).to.deep.equal({
+      status: 400,
+      message: 'Filter field unknown is not supported',
+      data: null,
+    });
+    expect(userService.findAllUsers.calls).to.have.lengthOf(0);
   });
 
   it('returns own profile', async () => {
     userService.findUserById.resolves(baseUser);
+    userService.findMealsByCookId.resolves([]);
 
     const response = await request(app)
       .get('/api/user/profile')
@@ -175,10 +266,41 @@ describe('protected user endpoints', () => {
     expect(response.status).to.equal(200);
     expect(userService.findUserById.calls).to.deep.equal([[42]]);
     expect(response.body.data.user).to.deep.equal(baseUser);
+    expect(response.body.data.meals).to.deep.equal([]);
+  });
+
+  it('profile includes meals where logged-in user is cook', async () => {
+    userService.findUserById.resolves(baseUser);
+    userService.findMealsByCookId.resolves([offeredMeal]);
+
+    const response = await request(app)
+      .get('/api/user/profile')
+      .set('Authorization', `Bearer ${tokenFor()}`);
+
+    expect(response.status).to.equal(200);
+    expect(userService.findMealsByCookId.calls).to.deep.equal([[42, { futureOnly: true }]]);
+    expect(response.body.data.meals).to.have.lengthOf(1);
+    expect(response.body.data.meals[0].cookId).to.equal(42);
+    expect(response.body.data.meals[0].cook.password).to.be.undefined;
+    expect(response.body.data.meals[0].participants[0].password).to.be.undefined;
+  });
+
+  it('profile does not include meals from other cooks', async () => {
+    userService.findUserById.resolves(baseUser);
+    userService.findMealsByCookId.resolves([offeredMeal]);
+
+    const response = await request(app)
+      .get('/api/user/profile')
+      .set('Authorization', `Bearer ${tokenFor()}`);
+
+    expect(response.status).to.equal(200);
+    expect(userService.findMealsByCookId.calls[0]).to.deep.equal([42, { futureOnly: true }]);
+    expect(response.body.data.meals.every((meal) => meal.cookId === 42)).to.equal(true);
   });
 
   it('returns a user by id', async () => {
     userService.findUserById.resolves(baseUser);
+    userService.findMealsByCookId.resolves([]);
 
     const response = await request(app)
       .get('/api/user/42')
@@ -187,6 +309,35 @@ describe('protected user endpoints', () => {
     expect(response.status).to.equal(200);
     expect(response.body.message).to.equal('User retrieved successfully');
     expect(response.body.data.user).to.deep.equal(baseUser);
+    expect(response.body.data.meals).to.deep.equal([]);
+  });
+
+  it('get user by id includes meals offered by that user', async () => {
+    userService.findUserById.resolves(baseUser);
+    userService.findMealsByCookId.resolves([offeredMeal]);
+
+    const response = await request(app)
+      .get('/api/user/42')
+      .set('Authorization', `Bearer ${tokenFor()}`);
+
+    expect(response.status).to.equal(200);
+    expect(userService.findMealsByCookId.calls).to.deep.equal([[42]]);
+    expect(response.body.data.meals).to.have.lengthOf(1);
+    expect(response.body.data.meals[0].cookId).to.equal(42);
+    expect(response.body.data.meals[0].cook.password).to.be.undefined;
+  });
+
+  it('get user by id does not include other users meals', async () => {
+    userService.findUserById.resolves(baseUser);
+    userService.findMealsByCookId.resolves([offeredMeal]);
+
+    const response = await request(app)
+      .get('/api/user/42')
+      .set('Authorization', `Bearer ${tokenFor()}`);
+
+    expect(response.status).to.equal(200);
+    expect(userService.findMealsByCookId.calls[0]).to.deep.equal([42]);
+    expect(response.body.data.meals.every((meal) => meal.cookId === 42)).to.equal(true);
   });
 
   it('returns 404 when a user id does not exist', async () => {
@@ -263,7 +414,7 @@ describe('protected user endpoints', () => {
     expect(response.status).to.equal(200);
     expect(response.body).to.deep.equal({
       status: 200,
-      message: 'User deleted successfully',
+      message: 'User with ID #42 has been deleted',
       data: null,
     });
     expect(userService.deleteUser.calls).to.deep.equal([[42]]);
