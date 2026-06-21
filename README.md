@@ -1,6 +1,6 @@
 # Share-a-Meal Programmeren 4
 
-Backend REST API for the HBO Programmeren 4 Share-a-Meal assignment.
+Backend REST API 
 
 ## Tech Stack
 
