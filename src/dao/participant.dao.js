@@ -11,6 +11,7 @@ const participantFields = `
   u.isActive
 `;
 
+// Haalt alle deelnemers van een maaltijd op zonder wachtwoorden.
 async function findParticipantsByMealId(mealId) {
   const [rows] = await pool.execute(
     `SELECT ${participantFields}
@@ -23,6 +24,7 @@ async function findParticipantsByMealId(mealId) {
   return rows;
 }
 
+// Haalt één deelnemer op voor een specifieke maaltijd.
 async function findParticipantByMealAndUser(mealId, userId) {
   const [rows] = await pool.execute(
     `SELECT ${participantFields}
@@ -36,6 +38,7 @@ async function findParticipantByMealAndUser(mealId, userId) {
   return rows[0] || null;
 }
 
+// Voegt een user toe als deelnemer van een maaltijd.
 async function addParticipant(mealId, userId) {
   await pool.execute(
     'INSERT INTO meal_participants (mealId, userId) VALUES (?, ?)',
@@ -45,6 +48,7 @@ async function addParticipant(mealId, userId) {
   return findParticipantByMealAndUser(mealId, userId);
 }
 
+// Verwijdert een deelname van een user aan een maaltijd.
 async function removeParticipant(mealId, userId) {
   const [result] = await pool.execute(
     'DELETE FROM meal_participants WHERE mealId = ? AND userId = ?',

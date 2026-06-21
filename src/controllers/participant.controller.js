@@ -1,10 +1,12 @@
 const mealService = require('../services/meal.service');
 const participantService = require('../services/participant.service');
 
+// Stuurt iedere participant-response terug in het vaste responseformaat.
 function json(res, status, message, data = null) {
   return res.status(status).json({ status, message, data });
 }
 
+// Zet routeparameters om naar geldige positieve IDs.
 function parsePositiveInteger(value, fieldName) {
   const parsedValue = Number.parseInt(value, 10);
 
@@ -21,6 +23,7 @@ function parsePositiveInteger(value, fieldName) {
   };
 }
 
+// Verwijdert het wachtwoord uit participant-user objecten.
 function sanitizeUser(user) {
   if (!user) {
     return null;
@@ -30,10 +33,12 @@ function sanitizeUser(user) {
   return publicUser;
 }
 
+// Controleert of de ingelogde user eigenaar/kok van de maaltijd is.
 function isMealOwner(req, meal) {
   return meal.cookId === req.user.userId || meal.cook?.id === req.user.userId;
 }
 
+// Haalt een maaltijd op en stuurt 404 als deze niet bestaat.
 async function getExistingMeal(res, mealId) {
   const meal = await mealService.findMealById(mealId);
 
@@ -45,6 +50,7 @@ async function getExistingMeal(res, mealId) {
   return meal;
 }
 
+// Meldt de ingelogde user aan als deelnemer van een maaltijd.
 async function participate(req, res, next) {
   try {
     const { value: mealId, message } = parsePositiveInteger(req.params.mealId, 'mealId');
@@ -84,6 +90,7 @@ async function participate(req, res, next) {
   }
 }
 
+// Meldt de ingelogde user af van een maaltijd.
 async function unsubscribe(req, res, next) {
   try {
     const { value: mealId, message } = parsePositiveInteger(req.params.mealId, 'mealId');
@@ -113,6 +120,7 @@ async function unsubscribe(req, res, next) {
   }
 }
 
+// Haalt de deelnemerslijst op voor de eigenaar van de maaltijd.
 async function getParticipants(req, res, next) {
   try {
     const { value: mealId, message } = parsePositiveInteger(req.params.mealId, 'mealId');
@@ -139,6 +147,7 @@ async function getParticipants(req, res, next) {
   }
 }
 
+// Haalt details van een deelnemer op voor de eigenaar van de maaltijd.
 async function getParticipant(req, res, next) {
   try {
     const { value: mealId, message: mealIdMessage } = parsePositiveInteger(req.params.mealId, 'mealId');

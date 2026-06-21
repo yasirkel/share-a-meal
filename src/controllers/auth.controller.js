@@ -6,6 +6,7 @@ const authService = require('../services/auth.service');
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const passwordPattern = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
 
+// Valideert de loginvelden voordat de database wordt geraadpleegd.
 function validationMessage(emailAddress, password) {
   if (!emailAddress || !password) {
     return 'emailAddress and password are required';
@@ -19,6 +20,7 @@ function validationMessage(emailAddress, password) {
   return null;
 }
 
+// Handelt login af en geeft een JWT terug bij geldige gegevens.
 async function login(req, res, next) {
   try {
     const { emailAddress, password } = req.body;

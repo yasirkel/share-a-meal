@@ -3,14 +3,17 @@ const phoneNumberPattern = /^06\d{8}$/;
 
 const requiredFields = ['firstName', 'lastName', 'emailAddress', 'password', 'phoneNumber'];
 
+// Controleert of een waarde een niet-lege tekst is.
 function hasText(value) {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
+// Controleert of een e-mailadres het juiste formaat heeft.
 function validateEmailAddress(emailAddress) {
   return hasText(emailAddress) && emailPattern.test(emailAddress);
 }
 
+// Controleert of een wachtwoord voldoet aan de sterkte-eisen.
 function validatePassword(password) {
   return (
     typeof password === 'string'
@@ -20,10 +23,12 @@ function validatePassword(password) {
   );
 }
 
+// Controleert of een telefoonnummer een geldig Nederlands mobiel nummer is.
 function validatePhoneNumber(phoneNumber) {
   return hasText(phoneNumber) && phoneNumberPattern.test(phoneNumber);
 }
 
+// Valideert de verplichte velden en formats van een user.
 function validateUserPayload(payload, options = {}) {
   const errors = [];
   const fields = options.requirePassword === false

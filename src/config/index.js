@@ -1,10 +1,12 @@
 require('dotenv').config();
 
+// Leest een integer uit environment variables met een fallback.
 function getInteger(value, fallback) {
   const parsedValue = Number.parseInt(value, 10);
   return Number.isNaN(parsedValue) ? fallback : parsedValue;
 }
 
+// Leest een boolean uit environment variables met een fallback.
 function getBoolean(value, fallback = false) {
   if (value === undefined) {
     return fallback;

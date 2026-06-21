@@ -1,15 +1,18 @@
 const mealService = require('../services/meal.service');
 const { validateMealPayload } = require('../validators/meal.validator');
 
+// Stuurt iedere meal-response terug in het vaste responseformaat.
 function json(res, status, message, data = null) {
   return res.status(status).json({ status, message, data });
 }
 
+// Zet een routeparameter om naar een geldig positief meal ID.
 function parseMealId(value) {
   const mealId = Number.parseInt(value, 10);
   return Number.isInteger(mealId) && mealId > 0 ? mealId : null;
 }
 
+// Verwijdert het wachtwoord uit user-objecten in meal responses.
 function sanitizeUser(user) {
   if (!user) {
     return null;
@@ -19,6 +22,7 @@ function sanitizeUser(user) {
   return publicUser;
 }
 
+// Verwijdert wachtwoorden uit kok en deelnemers binnen een maaltijd.
 function sanitizeMeal(meal) {
   if (!meal) {
     return null;
@@ -33,10 +37,12 @@ function sanitizeMeal(meal) {
   };
 }
 
+// Controleert of de ingelogde user eigenaar/kok van de maaltijd is.
 function isOwner(req, meal) {
   return meal.cookId === req.user.userId || meal.cook?.id === req.user.userId;
 }
 
+// Maakt een nieuwe maaltijd aan met de ingelogde user als kok.
 async function create(req, res, next) {
   try {
     const invalidMessage = validateMealPayload(req.body);
@@ -54,6 +60,7 @@ async function create(req, res, next) {
   }
 }
 
+// Haalt alle maaltijden op inclusief kok en deelnemers.
 async function getAll(req, res, next) {
   try {
     const meals = await mealService.findAllMeals();
@@ -65,6 +72,7 @@ async function getAll(req, res, next) {
   }
 }
 
+// Haalt een specifieke maaltijd op basis van meal ID.
 async function getById(req, res, next) {
   try {
     const mealId = parseMealId(req.params.mealId);
@@ -86,6 +94,7 @@ async function getById(req, res, next) {
   }
 }
 
+// Wijzigt een maaltijd als de ingelogde user de kok is.
 async function update(req, res, next) {
   try {
     const mealId = parseMealId(req.params.mealId);
@@ -117,6 +126,7 @@ async function update(req, res, next) {
   }
 }
 
+// Verwijdert een maaltijd als de ingelogde user de kok is.
 async function remove(req, res, next) {
   try {
     const mealId = parseMealId(req.params.mealId);

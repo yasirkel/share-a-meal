@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 
+// Controleert of een request een geldige JWT-token bevat.
 function authenticateToken(req, res, next) {
   const authorization = req.headers.authorization;
   const [scheme, token] = authorization ? authorization.split(' ') : [];

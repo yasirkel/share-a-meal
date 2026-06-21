@@ -2,6 +2,7 @@ const pool = require('../config/database');
 
 let cachedMealColumns;
 
+// Bouwt veilige SELECT-velden op basis van de beschikbare meal-kolommen.
 function buildMealFields(mealColumns) {
   const allergenesField = mealColumns.has('allergenes')
     ? 'm.allergenes'
@@ -30,6 +31,7 @@ function buildMealFields(mealColumns) {
   `;
 }
 
+// Leest en cachet de meal-kolommen zodat queries bij de database passen.
 async function getMealFields() {
   if (!cachedMealColumns) {
     const [columns] = await pool.execute('SHOW COLUMNS FROM meal');
@@ -50,10 +52,12 @@ const userFields = `
   u.isActive AS cook_isActive
 `;
 
+// Zet databasewaarden om naar booleans zonder undefined te verliezen.
 function toBoolean(value) {
   return value === undefined ? undefined : Boolean(value);
 }
 
+// Vormt cook-kolommen uit een queryrij om naar een user-object.
 function mapCook(row) {
   if (!row.cook_id) {
     return null;
@@ -71,6 +75,7 @@ function mapCook(row) {
   };
 }
 
+// Vormt een queryrij om naar een volledig meal-object.
 function mapMeal(row, participants = []) {
   if (!row) {
     return null;
@@ -97,6 +102,7 @@ function mapMeal(row, participants = []) {
   };
 }
 
+// Haalt deelnemers van een maaltijd op zonder wachtwoorden.
 async function findParticipantsByMealId(mealId) {
   const [rows] = await pool.execute(
     `SELECT
@@ -117,6 +123,7 @@ async function findParticipantsByMealId(mealId) {
   return rows;
 }
 
+// Voegt deelnemers toe aan een meal-object.
 async function attachParticipants(meal) {
   if (!meal) {
     return null;
@@ -129,6 +136,7 @@ async function attachParticipants(meal) {
   };
 }
 
+// Haalt alle maaltijden op inclusief kok en deelnemers.
 async function findAllMeals() {
   const mealFields = await getMealFields();
   const [rows] = await pool.execute(
@@ -141,6 +149,7 @@ async function findAllMeals() {
   return Promise.all(meals.map(attachParticipants));
 }
 
+// Haalt één maaltijd op inclusief kok en deelnemers.
 async function findMealById(mealId) {
   const mealFields = await getMealFields();
   const [rows] = await pool.execute(
@@ -155,6 +164,7 @@ async function findMealById(mealId) {
   return attachParticipants(mapMeal(rows[0]));
 }
 
+// Haalt maaltijden op waarvan een user de kok is.
 async function findMealsByCookId(cookId, options = {}) {
   const mealFields = await getMealFields();
   const params = [cookId];
@@ -172,6 +182,7 @@ async function findMealsByCookId(cookId, options = {}) {
   return Promise.all(meals.map(attachParticipants));
 }
 
+// Maakt een maaltijd aan met de opgegeven kok.
 async function createMeal(meal, cookId) {
   const [result] = await pool.execute(
     `INSERT INTO meal
@@ -197,6 +208,7 @@ async function createMeal(meal, cookId) {
   return findMealById(result.insertId);
 }
 
+// Werkt een maaltijd bij en retourneert de bijgewerkte gegevens.
 async function updateMeal(mealId, meal) {
   await pool.execute(
     `UPDATE meal
@@ -231,6 +243,7 @@ async function updateMeal(mealId, meal) {
   return findMealById(mealId);
 }
 
+// Verwijdert een maaltijd en bijbehorende deelnemers in één transactie.
 async function deleteMeal(mealId) {
   const connection = await pool.getConnection();
 
