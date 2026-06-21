@@ -12,6 +12,7 @@ function errorHandler(error, req, res, next) {
   }
 
   const status = error.status || 500;
+  console.error(error.stack || error.message || error);
 
   return res.status(status).json({
     status,

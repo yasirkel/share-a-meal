@@ -43,6 +43,40 @@ const meal = {
   participants: [participant],
 };
 
+const seededMeal = {
+  id: 1,
+  name: 'Pasta Bolognese met tomaat, spekjes en kaas',
+  description: 'Een heerlijke klassieker! Altijd goed voor tevreden gesmikkel!',
+  price: 12.75,
+  dateTime: '2022-03-22T17:35:00.000Z',
+  maxAmountOfParticipants: 4,
+  imageUrl: 'https://miljuschka.nl/wp-content/uploads/2021/02/Pasta-bolognese-3-2.jpg',
+  cookId: 1,
+  isActive: true,
+  isVega: false,
+  isVegan: false,
+  isToTakeHome: true,
+  allergenes: 'gluten,lactose',
+  cook: {
+    id: 1,
+    firstName: 'Mariette',
+    lastName: 'van den Dullemen',
+    emailAddress: 'm.vandullemen@server.nl',
+    phoneNumber: '0611111111',
+    password: 'secret-hash',
+  },
+  participants: [
+    {
+      id: 2,
+      firstName: 'John',
+      lastName: 'Doe',
+      emailAddress: 'j.doe@server.com',
+      phoneNumber: '0612425475',
+      password: 'secret-hash',
+    },
+  ],
+};
+
 function tokenFor(user = cook) {
   return jwt.sign(
     { userId: user.id, emailAddress: user.emailAddress },
@@ -214,6 +248,19 @@ describe('GET /api/meal', () => {
     expect(response.body.data.meals).to.have.lengthOf(1);
     expect(response.body.data.meals[0].cook.password).to.be.undefined;
   });
+
+  it('get all meals returns 200 with seeded-style cook and participants', async () => {
+    mealService.findAllMeals.resolves([seededMeal]);
+
+    const response = await request(app).get('/api/meal');
+
+    expect(response.status).to.equal(200);
+    expect(response.body.data.meals).to.have.lengthOf(1);
+    expect(response.body.data.meals[0].name).to.equal('Pasta Bolognese met tomaat, spekjes en kaas');
+    expect(response.body.data.meals[0].participants).to.have.lengthOf(1);
+    expect(response.body.data.meals[0].cook.password).to.be.undefined;
+    expect(response.body.data.meals[0].participants[0].password).to.be.undefined;
+  });
 });
 
 describe('GET /api/meal/:mealId', () => {
@@ -241,6 +288,18 @@ describe('GET /api/meal/:mealId', () => {
       message: 'Meal retrieved successfully',
     });
     expect(response.body.data.meal.id).to.equal(7);
+    expect(response.body.data.meal.participants[0].password).to.be.undefined;
+  });
+
+  it('get meal by id returns 200 with seeded-style participants array', async () => {
+    mealService.findMealById.resolves(seededMeal);
+
+    const response = await request(app).get('/api/meal/1');
+
+    expect(response.status).to.equal(200);
+    expect(response.body.data.meal.id).to.equal(1);
+    expect(response.body.data.meal.participants).to.have.lengthOf(1);
+    expect(response.body.data.meal.cook.password).to.be.undefined;
     expect(response.body.data.meal.participants[0].password).to.be.undefined;
   });
 });

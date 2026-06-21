@@ -1,22 +1,43 @@
 const pool = require('../config/database');
 
-const mealFields = `
-  m.id,
-  m.name,
-  m.description,
-  m.price,
-  m.dateTime,
-  m.maxAmountOfParticipants,
-  m.imageUrl,
-  m.cookId,
-  m.isActive,
-  m.isVega,
-  m.isVegan,
-  m.isToTakeHome,
-  m.allergenes,
-  m.createDate,
-  m.updateDate
-`;
+let cachedMealColumns;
+
+function buildMealFields(mealColumns) {
+  const allergenesField = mealColumns.has('allergenes')
+    ? 'm.allergenes'
+    : mealColumns.has('allergies')
+      ? 'm.allergies AS allergenes'
+      : 'NULL AS allergenes';
+  const createDateField = mealColumns.has('createDate') ? 'm.createDate' : 'NULL AS createDate';
+  const updateDateField = mealColumns.has('updateDate') ? 'm.updateDate' : 'NULL AS updateDate';
+
+  return `
+    m.id,
+    m.name,
+    m.description,
+    m.price,
+    m.dateTime,
+    m.maxAmountOfParticipants,
+    m.imageUrl,
+    m.cookId,
+    m.isActive,
+    m.isVega,
+    m.isVegan,
+    m.isToTakeHome,
+    ${allergenesField},
+    ${createDateField},
+    ${updateDateField}
+  `;
+}
+
+async function getMealFields() {
+  if (!cachedMealColumns) {
+    const [columns] = await pool.execute('SHOW COLUMNS FROM meal');
+    cachedMealColumns = new Set(columns.map((column) => column.Field));
+  }
+
+  return buildMealFields(cachedMealColumns);
+}
 
 const userFields = `
   u.id AS cook_id,
@@ -109,6 +130,7 @@ async function attachParticipants(meal) {
 }
 
 async function findAllMeals() {
+  const mealFields = await getMealFields();
   const [rows] = await pool.execute(
     `SELECT ${mealFields}, ${userFields}
      FROM meal m
@@ -120,6 +142,7 @@ async function findAllMeals() {
 }
 
 async function findMealById(mealId) {
+  const mealFields = await getMealFields();
   const [rows] = await pool.execute(
     `SELECT ${mealFields}, ${userFields}
      FROM meal m
@@ -133,6 +156,7 @@ async function findMealById(mealId) {
 }
 
 async function findMealsByCookId(cookId, options = {}) {
+  const mealFields = await getMealFields();
   const params = [cookId];
   const dateFilter = options.futureOnly ? ' AND m.dateTime >= CURDATE()' : '';
 
@@ -225,6 +249,7 @@ async function deleteMeal(mealId) {
 }
 
 module.exports = {
+  buildMealFields,
   findAllMeals,
   findMealById,
   findMealsByCookId,
