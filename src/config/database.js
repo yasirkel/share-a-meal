@@ -1,6 +1,7 @@
 const mysql = require('mysql2/promise');
 const config = require('.');
 
+// Maakt de gedeelde MySQL connection pool op basis van environment config.
 const pool = mysql.createPool({
   host: config.database.host,
   port: config.database.port,

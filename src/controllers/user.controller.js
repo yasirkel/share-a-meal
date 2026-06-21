@@ -2,15 +2,18 @@ const bcrypt = require('bcrypt');
 const userService = require('../services/user.service');
 const { validateUserPayload } = require('../validators/user.validator');
 
+// Stuurt iedere user-response terug in het vaste responseformaat.
 function json(res, status, message, data = null) {
   return res.status(status).json({ status, message, data });
 }
 
+// Zet een routeparameter om naar een geldig positief user ID.
 function parseUserId(value) {
   const userId = Number.parseInt(value, 10);
   return Number.isInteger(userId) && userId > 0 ? userId : null;
 }
 
+// Verwijdert het wachtwoord uit user-objecten voordat ze naar de client gaan.
 function sanitizeUser(user) {
   if (!user) {
     return null;
@@ -20,6 +23,7 @@ function sanitizeUser(user) {
   return publicUser;
 }
 
+// Verwijdert wachtwoorden uit meal-objecten met kok en deelnemers.
 function sanitizeMeal(meal) {
   if (!meal) {
     return null;
@@ -34,6 +38,7 @@ function sanitizeMeal(meal) {
   };
 }
 
+// Controleert en normaliseert toegestane queryfilters voor users.
 function parseUserFilters(query) {
   const filters = { ...query };
   const fields = Object.keys(filters);
@@ -59,6 +64,7 @@ function parseUserFilters(query) {
   };
 }
 
+// Controleert of de ingelogde user de eigenaar van de user-data is.
 function ownerOnly(req, res, userId) {
   if (req.user.userId !== userId) {
     json(res, 403, 'You can only update or delete your own user', null);
@@ -68,6 +74,7 @@ function ownerOnly(req, res, userId) {
   return true;
 }
 
+// Registreert een nieuwe user met een bcrypt-gehasht wachtwoord.
 async function register(req, res, next) {
   try {
     const errors = validateUserPayload(req.body);
@@ -95,6 +102,7 @@ async function register(req, res, next) {
   }
 }
 
+// Haalt users op en past maximaal twee toegestane filters toe.
 async function getAll(req, res, next) {
   try {
     const { error, filters } = parseUserFilters(req.query);
@@ -111,6 +119,7 @@ async function getAll(req, res, next) {
   }
 }
 
+// Haalt het profiel van de ingelogde user op met toekomstige eigen maaltijden.
 async function getProfile(req, res, next) {
   try {
     const user = await userService.findUserById(req.user.userId);
@@ -130,6 +139,7 @@ async function getProfile(req, res, next) {
   }
 }
 
+// Haalt een user op basis van ID op met de aangeboden maaltijden.
 async function getById(req, res, next) {
   try {
     const userId = parseUserId(req.params.userId);
@@ -154,6 +164,7 @@ async function getById(req, res, next) {
   }
 }
 
+// Wijzigt alleen de gegevens van de ingelogde eigenaar.
 async function update(req, res, next) {
   try {
     const userId = parseUserId(req.params.userId);
@@ -190,6 +201,7 @@ async function update(req, res, next) {
   }
 }
 
+// Verwijdert alleen de user die hoort bij de ingelogde eigenaar.
 async function remove(req, res, next) {
   try {
     const userId = parseUserId(req.params.userId);

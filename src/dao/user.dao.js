@@ -11,6 +11,7 @@ const allowedFilterFields = [
   'isActive',
 ];
 
+// Haalt users op met optionele toegestane filters.
 async function findAllUsers(filters = {}) {
   const filterEntries = Object.entries(filters);
   const whereClauses = filterEntries.map(([field]) => `\`${field}\` = ?`);
@@ -21,11 +22,13 @@ async function findAllUsers(filters = {}) {
   return rows;
 }
 
+// Haalt een user op basis van ID op zonder wachtwoord.
 async function findUserById(userId) {
   const [rows] = await pool.execute(`SELECT ${publicFields} FROM \`user\` WHERE id = ? LIMIT 1`, [userId]);
   return rows[0] || null;
 }
 
+// Haalt een user op basis van e-mailadres op zonder wachtwoord.
 async function findUserByEmail(emailAddress) {
   const [rows] = await pool.execute(
     `SELECT ${publicFields} FROM \`user\` WHERE emailAddress = ? LIMIT 1`,
@@ -34,6 +37,7 @@ async function findUserByEmail(emailAddress) {
   return rows[0] || null;
 }
 
+// Maakt een nieuwe user aan en retourneert de publieke usergegevens.
 async function createUser(user) {
   const [result] = await pool.execute(
     `INSERT INTO \`user\`
@@ -54,6 +58,7 @@ async function createUser(user) {
   return findUserById(result.insertId);
 }
 
+// Werkt usergegevens bij en retourneert de publieke usergegevens.
 async function updateUser(userId, user) {
   await pool.execute(
     `UPDATE \`user\`
@@ -73,6 +78,7 @@ async function updateUser(userId, user) {
   return findUserById(userId);
 }
 
+// Verwijdert een user en geeft terug of er een rij is verwijderd.
 async function deleteUser(userId) {
   const [result] = await pool.execute('DELETE FROM `user` WHERE id = ?', [userId]);
   return result.affectedRows > 0;
