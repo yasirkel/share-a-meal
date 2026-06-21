@@ -40,7 +40,6 @@ Optional demo data:
 mysql -u root -p share_a_meal < database/seed.sql
 ```
 
-Demo users in `seed.sql` use the password `Password123!`.
 The database uses these tables: `user`, `meal` and `meal_participants`.
 
 ## Run App And Tests
@@ -141,10 +140,6 @@ The Render deploy hook is stored as a GitHub Actions secret and must never be co
 The deployed backend runs on Render Free Web Service.
 The online MySQL database runs on Aiven Free MySQL.
 
-Configure production environment variables in Render.
-Do not put production values in source files or README.
-Use `.env.example` and `.env.production.example` only as checklists for variable names.
-
 Render settings:
 
 - Build Command: `npm install`
@@ -165,6 +160,3 @@ Live URL:
 ```text
 https://share-a-meal-dqcl.onrender.com
 ```
-
-Assessment deliverables are a zip from `main` and the deployed server URL.
-After the deadline, do not change or redeploy `main`.
