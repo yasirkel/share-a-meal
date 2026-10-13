@@ -7,6 +7,17 @@ const { notFoundHandler, errorHandler } = require('./middleware/error.middleware
 
 const app = express();
 
+app.disable('x-powered-by');
+
+app.use('/api', (req, res, next) => {
+  res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'Cross-Origin-Resource-Policy': 'same-origin',
+    'Cache-Control': 'no-store',
+  });
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

@@ -35,10 +35,10 @@ async function login(req, res, next) {
     }
 
     const user = await authService.findUserByEmail(emailAddress);
-    if (!user) {
-      return res.status(404).json({
-        status: 404,
-        message: 'User not found',
+    if (!user || user.isActive === false) {
+      return res.status(401).json({
+        status: 401,
+        message: 'Invalid emailAddress or password',
         data: null,
       });
     }

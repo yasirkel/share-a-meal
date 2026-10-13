@@ -355,6 +355,20 @@ describe('protected user endpoints', () => {
     });
   });
 
+  it('rejects a user id with a non-numeric suffix', async () => {
+    const response = await request(app)
+      .get('/api/user/1abc')
+      .set('Authorization', `Bearer ${tokenFor()}`);
+
+    expect(response.status).to.equal(400);
+    expect(response.body).to.deep.equal({
+      status: 400,
+      message: 'userId must be a positive integer',
+      data: null,
+    });
+    expect(userService.findUserById.calls).to.have.lengthOf(0);
+  });
+
   it('updates own user', async () => {
     const updatedUser = { ...baseUser, firstName: 'Updated' };
     userService.findUserById.resolvesOnce(baseUser);

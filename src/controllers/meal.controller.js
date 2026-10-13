@@ -1,5 +1,6 @@
 const mealService = require('../services/meal.service');
 const { validateMealPayload } = require('../validators/meal.validator');
+const { parsePositiveInteger } = require('../validators/id.validator');
 
 // Stuurt iedere meal-response terug in het vaste responseformaat.
 function json(res, status, message, data = null) {
@@ -8,8 +9,7 @@ function json(res, status, message, data = null) {
 
 // Zet een routeparameter om naar een geldig positief meal ID.
 function parseMealId(value) {
-  const mealId = Number.parseInt(value, 10);
-  return Number.isInteger(mealId) && mealId > 0 ? mealId : null;
+  return parsePositiveInteger(value);
 }
 
 // Verwijdert het wachtwoord uit user-objecten in meal responses.

@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const userService = require('../services/user.service');
 const { validateUserPayload } = require('../validators/user.validator');
+const { parsePositiveInteger } = require('../validators/id.validator');
 
 // Stuurt iedere user-response terug in het vaste responseformaat.
 function json(res, status, message, data = null) {
@@ -9,8 +10,7 @@ function json(res, status, message, data = null) {
 
 // Zet een routeparameter om naar een geldig positief user ID.
 function parseUserId(value) {
-  const userId = Number.parseInt(value, 10);
-  return Number.isInteger(userId) && userId > 0 ? userId : null;
+  return parsePositiveInteger(value);
 }
 
 // Verwijdert het wachtwoord uit user-objecten voordat ze naar de client gaan.

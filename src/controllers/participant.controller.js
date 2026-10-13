@@ -1,5 +1,6 @@
 const mealService = require('../services/meal.service');
 const participantService = require('../services/participant.service');
+const { parsePositiveInteger: parsePositiveIntegerValue } = require('../validators/id.validator');
 
 // Stuurt iedere participant-response terug in het vaste responseformaat.
 function json(res, status, message, data = null) {
@@ -8,9 +9,9 @@ function json(res, status, message, data = null) {
 
 // Zet routeparameters om naar geldige positieve IDs.
 function parsePositiveInteger(value, fieldName) {
-  const parsedValue = Number.parseInt(value, 10);
+  const parsedValue = parsePositiveIntegerValue(value);
 
-  if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
+  if (parsedValue === null) {
     return {
       value: null,
       message: `${fieldName} must be a positive integer`,

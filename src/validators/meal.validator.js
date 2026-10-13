@@ -8,6 +8,7 @@ const createRequiredFields = [
 ];
 
 const updateRequiredFields = ['name', 'price', 'maxAmountOfParticipants'];
+const booleanFields = ['isActive', 'isVega', 'isVegan', 'isToTakeHome'];
 
 // Controleert of een waarde een niet-lege tekst is.
 function hasText(value) {
@@ -51,6 +52,14 @@ function validateMealPayload(payload, options = {}) {
 
   if (requiredMessage) {
     return requiredMessage;
+  }
+
+  const invalidBooleanField = booleanFields.find((field) => (
+    payload[field] !== undefined && typeof payload[field] !== 'boolean'
+  ));
+
+  if (invalidBooleanField) {
+    return `${invalidBooleanField} must be a boolean`;
   }
 
   if (payload.price !== undefined && !isPositiveNumber(payload.price)) {

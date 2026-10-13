@@ -52,11 +52,6 @@ const userFields = `
   u.isActive AS cook_isActive
 `;
 
-// Zet databasewaarden om naar booleans zonder undefined te verliezen.
-function toBoolean(value) {
-  return value === undefined ? undefined : Boolean(value);
-}
-
 // Vormt cook-kolommen uit een queryrij om naar een user-object.
 function mapCook(row) {
   if (!row.cook_id) {
@@ -198,9 +193,9 @@ async function createMeal(meal, cookId) {
       meal.imageUrl,
       cookId,
       meal.isActive ?? true,
-      toBoolean(meal.isVega) ?? false,
-      toBoolean(meal.isVegan) ?? false,
-      toBoolean(meal.isToTakeHome) ?? false,
+      meal.isVega ?? false,
+      meal.isVegan ?? false,
+      meal.isToTakeHome ?? false,
       meal.allergenes || null,
     ]
   );
@@ -232,9 +227,9 @@ async function updateMeal(mealId, meal) {
       meal.maxAmountOfParticipants,
       meal.imageUrl || null,
       meal.isActive,
-      toBoolean(meal.isVega),
-      toBoolean(meal.isVegan),
-      toBoolean(meal.isToTakeHome),
+      meal.isVega,
+      meal.isVegan,
+      meal.isToTakeHome,
       meal.allergenes || null,
       mealId,
     ]

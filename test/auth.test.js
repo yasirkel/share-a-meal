@@ -13,7 +13,14 @@ const user = {
   firstName: 'Test',
   lastName: 'User',
   emailAddress: 'test@example.com',
+  isActive: true,
   password: bcrypt.hashSync('Correctpass1', 10),
+};
+
+const inactiveUser = {
+  ...user,
+  emailAddress: 'inactive@example.com',
+  isActive: false,
 };
 
 beforeEach(() => {
@@ -60,7 +67,7 @@ describe('POST /api/login', () => {
     });
   });
 
-  it('rejects an unknown user', async () => {
+  it('rejects an unknown user with the same generic authentication error', async () => {
     authService.findUserByEmail.resolves(null);
 
     const response = await request(app).post('/api/login').send({
@@ -68,12 +75,29 @@ describe('POST /api/login', () => {
       password: 'Somepass1',
     });
 
-    expect(response.status).to.equal(404);
+    expect(response.status).to.equal(401);
     expect(response.body).to.deep.equal({
-      status: 404,
-      message: 'User not found',
+      status: 401,
+      message: 'Invalid emailAddress or password',
       data: null,
     });
+  });
+
+  it('rejects an inactive user without issuing a JWT', async () => {
+    authService.findUserByEmail.resolves(inactiveUser);
+
+    const response = await request(app).post('/api/login').send({
+      emailAddress: inactiveUser.emailAddress,
+      password: 'Correctpass1',
+    });
+
+    expect(response.status).to.equal(401);
+    expect(response.body).to.deep.equal({
+      status: 401,
+      message: 'Invalid emailAddress or password',
+      data: null,
+    });
+    expect(response.body.data).to.equal(null);
   });
 
   it('rejects missing fields', async () => {

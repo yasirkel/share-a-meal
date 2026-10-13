@@ -159,6 +159,36 @@ describe('POST /api/meal', () => {
     expect(response.body.data.meal.cook.password).to.be.undefined;
     expect(response.body.data.meal.participants[0].password).to.be.undefined;
   });
+
+  it('accepts actual boolean meal fields', async () => {
+    mealService.createMeal.resolves(meal);
+
+    const response = await request(app)
+      .post('/api/meal')
+      .set('Authorization', `Bearer ${tokenFor()}`)
+      .send(validMeal({
+        isActive: true,
+        isVega: false,
+        isVegan: true,
+        isToTakeHome: false,
+      }));
+
+    expect(response.status).to.equal(201);
+  });
+
+  it('rejects string values for boolean meal fields', async () => {
+    for (const field of ['isActive', 'isVega', 'isVegan', 'isToTakeHome']) {
+      const response = await request(app)
+        .post('/api/meal')
+        .set('Authorization', `Bearer ${tokenFor()}`)
+        .send(validMeal({ [field]: 'false' }));
+
+      expect(response.status).to.equal(400);
+      expect(response.body.message).to.equal(`${field} must be a boolean`);
+    }
+
+    expect(mealService.createMeal.calls).to.have.lengthOf(0);
+  });
 });
 
 describe('PUT /api/meal/:mealId', () => {
@@ -301,6 +331,25 @@ describe('GET /api/meal/:mealId', () => {
     expect(response.body.data.meal.participants).to.have.lengthOf(1);
     expect(response.body.data.meal.cook.password).to.be.undefined;
     expect(response.body.data.meal.participants[0].password).to.be.undefined;
+  });
+
+  it('rejects a meal id with a non-numeric suffix', async () => {
+    const response = await request(app).get('/api/meal/1abc');
+
+    expect(response.status).to.equal(400);
+    expect(response.body).to.deep.equal({
+      status: 400,
+      message: 'mealId must be a positive integer',
+      data: null,
+    });
+    expect(mealService.findMealById.calls).to.have.lengthOf(0);
+  });
+
+  it('rejects a non-numeric meal id', async () => {
+    const response = await request(app).get('/api/meal/abc');
+
+    expect(response.status).to.equal(400);
+    expect(response.body.message).to.equal('mealId must be a positive integer');
   });
 });
 

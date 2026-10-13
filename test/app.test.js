@@ -7,6 +7,10 @@ describe('application routes', () => {
     const response = await request(app).get('/api/info');
 
     expect(response.status).to.equal(200);
+    expect(response.headers['x-powered-by']).to.be.undefined;
+    expect(response.headers['x-content-type-options']).to.equal('nosniff');
+    expect(response.headers['cross-origin-resource-policy']).to.equal('same-origin');
+    expect(response.headers['cache-control']).to.equal('no-store');
     expect(response.body).to.deep.equal({
       status: 200,
       message: 'Share-a-Meal API is running',
